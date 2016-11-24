@@ -30,6 +30,16 @@ def parse_arguments(argv):
     """
     parser = argparse.ArgumentParser(description=__doc__)
 
+    parser.add_argument(
+        'server',
+        help='Rabbitmq server IP address',
+    )
+    parser.add_argument(
+        'exchange_names',
+        nargs='+',
+        help='Exchange names to bind to',
+    )
+
     log_levels = ['debug', 'info', 'warning', 'error', 'critical']
     parser.add_argument(
         '-l', '--log-level',
