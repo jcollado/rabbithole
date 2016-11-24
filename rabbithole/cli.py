@@ -27,6 +27,17 @@ def main(argv=None):
     consumer = Consumer(args.rabbitmq_server, args.exchange_names)
     database = Database(args.db_url, args.insert_query)
 
+    def insert(payload):
+        """Insert payload in database.
+
+        :param payload: Rows to insert in the database
+        :type payload: list(dict(str))
+
+        """
+        database.insert([payload])
+
+    consumer.message_received.connect(insert)
+
     try:
         consumer.run()
     except KeyboardInterrupt:
