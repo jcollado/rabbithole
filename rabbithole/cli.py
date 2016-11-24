@@ -4,7 +4,10 @@
 
 import argparse
 import logging
+import os
 import sys
+
+import yaml
 
 from rabbithole.consumer import Consumer
 from rabbithole.db import Database
@@ -53,22 +56,28 @@ def parse_arguments(argv):
     """
     parser = argparse.ArgumentParser(description=__doc__)
 
+    def yaml_file(path):
+        """Yaml file argument.
+
+        :param path: Path to the yaml file
+        :type path: str
+
+        """
+        if not os.path.isfile(path):
+            raise argparse.ArgumentTypeError('File not found')
+
+        with open(path) as fp:
+            try:
+                data = yaml.load(fp)
+            except yaml.YAMLError:
+                raise argparse.ArgumentTypeError('YAML parsing error')
+
+        return data
+
     parser.add_argument(
-        'db_url',
-        help='Database connection URL',
-    )
-    parser.add_argument(
-        'insert_query',
-        help='Database insert query',
-    )
-    parser.add_argument(
-        'rabbitmq_server',
-        help='Rabbitmq server IP address',
-    )
-    parser.add_argument(
-        'exchange_names',
-        nargs='+',
-        help='Exchange names to bind to',
+        'config',
+        type=yaml_file,
+        help='Configuration file',
     )
 
     log_levels = ['debug', 'info', 'warning', 'error', 'critical']
