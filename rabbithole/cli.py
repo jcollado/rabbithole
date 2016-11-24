@@ -1,14 +1,70 @@
 # -*- coding: utf-8 -*-
 
-import click
+"""Store messages from rabbitmq into a SQL database."""
+
+import argparse
+import logging
+import sys
 
 
-@click.command()
-def main(args=None):
-    """Console script for rabbithole"""
-    click.echo("Replace this message by putting your code into "
-               "rabbithole.cli.main")
-    click.echo("See click documentation at http://click.pocoo.org/")
+def main(argv=None):
+    """Console script for rabbithole
+
+    :param argv: Command line arguments
+    :type argv: list(str)
+
+    """
+    if argv is None:
+        argv = sys.argv[1:]
+
+    args = parse_arguments(argv)
+    configure_logging(args.log_level)
+
+
+def parse_arguments(argv):
+    """Parse command line arguments.
+
+    :returns: Parsed arguments
+    :rtype: argparse.Namespace
+
+    """
+    parser = argparse.ArgumentParser(description=__doc__)
+
+    log_levels = ['debug', 'info', 'warning', 'error', 'critical']
+    parser.add_argument(
+        '-l', '--log-level',
+        dest='log_level',
+        choices=log_levels,
+        default='debug',
+        help=('Log level. One of {0} or {1} '
+              '(%(default)s by default)'
+              .format(', '.join(log_levels[:-1]), log_levels[-1])))
+
+    args = parser.parse_args(argv)
+    args.log_level = getattr(logging, args.log_level.upper())
+    return args
+
+
+def configure_logging(log_level):
+    """Configure logging based on command line argument.
+
+    :param log_level: Log level passed form the command line
+    :type log_level: int
+
+    """
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+
+    # Log to sys.stderr using log level
+    # passed through command line
+    log_handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+    log_handler.setFormatter(formatter)
+    log_handler.setLevel(log_level)
+    root_logger.addHandler(log_handler)
+
+    # Disable pika extra verbose logging
+    logging.getLogger('pika').setLevel(logging.WARNING)
 
 
 if __name__ == "__main__":
