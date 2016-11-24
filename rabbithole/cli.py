@@ -7,6 +7,8 @@ import logging
 import os
 import sys
 
+import pika
+import sqlalchemy
 import yaml
 
 from rabbithole.consumer import Consumer
@@ -26,25 +28,39 @@ def main(argv=None):
         argv = sys.argv[1:]
 
     args = parse_arguments(argv)
+    config = args.config
     configure_logging(args.log_level)
-    consumer = Consumer(args.rabbitmq_server, args.exchange_names)
-    database = Database(args.db_url, args.insert_query)
 
-    def insert(payload):
+    try:
+        consumer = Consumer(config['rabbitmq'], config['output'].keys())
+    except pika.exceptions.AMQPError as exception:
+        logger.error('Rabbitmq connectivity error: %s', exception)
+        return 1
+
+    try:
+        database = Database(config['database'], config['output'])
+    except sqlalchemy.exc.SQLAlchemyError as exception:
+        logger.error(exception)
+        return 1
+
+    @consumer.message_received.connect
+    def insert(exchange_name, payload):
         """Insert payload in database.
 
+        :param exchange_name: Key used to determine which query to execute
+        :type exchange_name: str
         :param payload: Rows to insert in the database
         :type payload: list(dict(str))
 
         """
-        database.insert([payload])
-
-    consumer.message_received.connect(insert)
+        database.insert(exchange_name, [payload])
 
     try:
         consumer.run()
     except KeyboardInterrupt:
         pass
+
+    return 0
 
 
 def parse_arguments(argv):
@@ -118,4 +134,4 @@ def configure_logging(log_level):
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

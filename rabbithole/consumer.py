@@ -77,4 +77,4 @@ class Consumer(object):
 
         channel.basic_ack(delivery_tag=method_frame.delivery_tag)
         payload = json.loads(body)
-        self.message_received.send(payload)
+        self.message_received.send(method_frame.exchange, payload=payload)
