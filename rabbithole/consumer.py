@@ -64,7 +64,8 @@ class Consumer(object):
         :type body: str
 
         """
-        logger.debug('Message received: %s', body)
+        exchange_name = method_frame.exchange
+        logger.debug('Message received from %r: %s', exchange_name, body)
 
         # Only accept json messages
         if header_frame.content_type != 'application/json':
@@ -77,4 +78,4 @@ class Consumer(object):
 
         channel.basic_ack(delivery_tag=method_frame.delivery_tag)
         payload = json.loads(body)
-        self.message_received.send(method_frame.exchange, payload=payload)
+        self.message_received.send(exchange_name, payload=payload)
