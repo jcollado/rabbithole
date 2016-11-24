@@ -7,6 +7,7 @@ import logging
 import sys
 
 from rabbithole.consumer import Consumer
+from rabbithole.db import Database
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,8 @@ def main(argv=None):
 
     args = parse_arguments(argv)
     configure_logging(args.log_level)
-    consumer = Consumer(args.server, args.exchange_names)
+    consumer = Consumer(args.rabbitmq_server, args.exchange_names)
+    database = Database(args.db_url, args.insert_query)
 
     try:
         consumer.run()
