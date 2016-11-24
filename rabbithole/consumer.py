@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import json
 import logging
 
+import blinker
 import pika
 
 logger = logging.getLogger(__name__)
@@ -44,6 +46,7 @@ class Consumer(object):
         channel.basic_consume(self.message_received_cb, queue=queue_name)
 
         self.channel = channel
+        self.message_received = blinker.Signal()
 
     def run(self):
         """Run ioloop and consume messages."""
@@ -73,3 +76,5 @@ class Consumer(object):
             return
 
         channel.basic_ack(delivery_tag=method_frame.delivery_tag)
+        payload = json.loads(body)
+        self.message_received.send(payload)
