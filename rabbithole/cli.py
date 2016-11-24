@@ -41,7 +41,15 @@ def parse_arguments(argv):
     parser = argparse.ArgumentParser(description=__doc__)
 
     parser.add_argument(
-        'server',
+        'db_url',
+        help='Database connection URL',
+    )
+    parser.add_argument(
+        'insert_query',
+        help='Database insert query',
+    )
+    parser.add_argument(
+        'rabbitmq_server',
         help='Rabbitmq server IP address',
     )
     parser.add_argument(
