@@ -5,11 +5,12 @@
 import logging
 
 from unittest import TestCase
-from StringIO import StringIO
 
 import yaml
 
 from mock import patch
+from six import StringIO
+
 from rabbithole.cli import (
     configure_logging,
     parse_arguments,
