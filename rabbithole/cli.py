@@ -13,6 +13,7 @@ import yaml
 
 from rabbithole.consumer import Consumer
 from rabbithole.db import Database
+from rabbithole.batcher import Batcher
 
 logger = logging.getLogger(__name__)
 
@@ -43,17 +44,8 @@ def main(argv=None):
         logger.error(exception)
         return 1
 
-    @consumer.message_received.connect
-    def insert(exchange_name, payload):
-        """Insert payload in database.
-
-        :param exchange_name: Key used to determine which query to execute
-        :type exchange_name: str
-        :param payload: Rows to insert in the database
-        :type payload: list(dict(str))
-
-        """
-        database.insert(exchange_name, [payload])
+    batcher = Batcher(database)
+    consumer.message_received.connect(batcher.message_received_cb)
 
     try:
         consumer.run()
@@ -124,7 +116,8 @@ def configure_logging(log_level):
     # Log to sys.stderr using log level
     # passed through command line
     log_handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+    formatter = logging.Formatter(
+        '%(asctime)s %(threadName)s %(levelname)s: %(message)s')
     log_handler.setFormatter(formatter)
     log_handler.setLevel(log_level)
     root_logger.addHandler(log_handler)
