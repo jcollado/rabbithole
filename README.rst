@@ -18,6 +18,10 @@ Rabbit Hole
     :target: https://coveralls.io/github/jcollado/rabbithole?branch=master
     :alt: Coverage
 
+.. image:: https://landscape.io/github/jcollado/rabbithole/master/landscape.svg?style=flat
+   :target: https://landscape.io/github/jcollado/rabbithole/master
+   :alt: Code Health
+
 .. image:: https://readthedocs.org/projects/rabbitmqhole/badge/?version=latest
     :target: https://rabbitmqhole.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status

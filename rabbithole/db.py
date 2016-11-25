@@ -14,6 +14,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Database(object):
+
     """Database writer.
 
     :param url: Database connection string

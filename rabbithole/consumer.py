@@ -21,6 +21,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Consumer(object):
+
     """Rabbitmq message consumer.
 
     :param server: Rabbitmq server IP address
