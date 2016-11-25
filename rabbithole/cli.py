@@ -58,7 +58,7 @@ def main(argv=None):
     try:
         consumer.run()
     except KeyboardInterrupt:
-        pass
+        logger.info('Interrupted by user')
 
     return 0
 
