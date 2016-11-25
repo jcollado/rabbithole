@@ -42,7 +42,7 @@ class Batcher(object):
         :type payload: list(dict(str))
 
         """
-        # Use a lock to make sure that callback execution do not interleave
+        # Use a lock to make sure that callback execution doesn't interleave
         with self.locks[exchange_name]:
             batch = self.batches[exchange_name]
             batch.append(payload)
@@ -73,7 +73,7 @@ class Batcher(object):
         :type exchange_name: str
 
         """
-        # Use a lock to make sure that callback execution do not interleave
+        # Use a lock to make sure that callback execution doesn't interleave
         with self.locks[exchange_name]:
             logger.debug(
                 'Time limit (%.2f) exceeded for %r',
