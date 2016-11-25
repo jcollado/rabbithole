@@ -9,8 +9,8 @@ Rabbit Hole
 .. image:: https://img.shields.io/travis/jcollado/rabbithole.svg
         :target: https://travis-ci.org/jcollado/rabbithole
 
-.. image:: https://readthedocs.org/projects/rabbithole/badge/?version=latest
-        :target: https://rabbithole.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/rabbitmqhole/badge/?version=latest
+        :target: https://rabbitmqhole.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
 .. image:: https://pyup.io/repos/github/jcollado/rabbithole/shield.svg
@@ -22,7 +22,7 @@ Store messages from rabbitmq into a SQL database
 
 
 * Free software: MIT license
-* Documentation: https://rabbithole.readthedocs.io.
+* Documentation: https://rabbitmqhole.readthedocs.io.
 
 
 Features
