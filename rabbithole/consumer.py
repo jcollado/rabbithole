@@ -1,16 +1,27 @@
 # -*- coding: utf-8 -*-
 
+"""Consumer: get messages from rabbitmq.
+
+The strategy to get messages is:
+    - connect to the rabbitmq server
+    - bind a queue to the desired exchanges
+
+Note that it's assumed that the exchanges will have `fanout` type and that the
+routing key isn't relevant in this case.
+
+"""
+
 import json
 import logging
 
 import blinker
 import pika
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class Consumer(object):
-    """Message consumer.
+    """Rabbitmq message consumer.
 
     :param server: Rabbitmq server IP address
     :type server: str
@@ -21,7 +32,7 @@ class Consumer(object):
 
     def __init__(self, server, exchange_names):
         """Configure exchanges and queue."""
-        logger.info('Connecting to %r...', server)
+        LOGGER.info('Connecting to %r...', server)
         parameters = pika.ConnectionParameters(server)
         connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
@@ -29,7 +40,7 @@ class Consumer(object):
         # Use a single queue to process messages from all exchanges
         result = channel.queue_declare(auto_delete=True)
         queue_name = result.method.queue
-        logger.debug('Declared queue %r', queue_name)
+        LOGGER.debug('Declared queue %r', queue_name)
 
         for exchange_name in exchange_names:
             channel.exchange_declare(
@@ -40,7 +51,7 @@ class Consumer(object):
                 exchange=exchange_name,
                 queue=queue_name,
             )
-            logger.debug(
+            LOGGER.debug(
                 'Queue %r bound to exchange %r', queue_name, exchange_name)
 
         channel.basic_consume(self.message_received_cb, queue=queue_name)
@@ -65,11 +76,11 @@ class Consumer(object):
 
         """
         exchange_name = method_frame.exchange
-        logger.debug('Message received from %r: %s', exchange_name, body)
+        LOGGER.debug('Message received from %r: %s', exchange_name, body)
 
         # Only accept json messages
         if header_frame.content_type != 'application/json':
-            logger.warning(
+            LOGGER.warning(
                 'Message discarded. Unexpected content type: %r',
                 header_frame.content_type,
             )

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+"""Database: run queries with batches of rows per exchange."""
+
 import logging
 
 from sqlalchemy import (
@@ -8,7 +10,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import SQLAlchemyError
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class Database(object):
@@ -23,16 +25,20 @@ class Database(object):
 
     def __init__(self, url, queries):
         """Connect to database."""
-        engine = create_engine(url)
-
-        self.connection = engine.connect()
-        logger.debug('Connected to: %r', url)
+        self.engine = create_engine(url)
+        self.connection = None
 
         self.queries = {
             exchange_name: text(query)
             for exchange_name, query
             in queries.items()
         }
+
+    def connect(self):
+        """Connect to the database."""
+        self.connection = self.engine.connect()
+        LOGGER.debug('Connected to: %r', self.engine.url)
+        return self
 
     def insert(self, exchange_name, rows):
         """Insert rows in database.
@@ -48,6 +54,6 @@ class Database(object):
         try:
             self.connection.execute(query, rows)
         except SQLAlchemyError as exception:
-            logger.error(exception)
+            LOGGER.error(exception)
         else:
-            logger.debug('Inserted %d rows', len(rows))
+            LOGGER.debug('Inserted %d rows', len(rows))

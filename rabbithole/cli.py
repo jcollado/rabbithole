@@ -15,7 +15,7 @@ from rabbithole.consumer import Consumer
 from rabbithole.db import Database
 from rabbithole.batcher import Batcher
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def main(argv=None):
@@ -35,13 +35,13 @@ def main(argv=None):
     try:
         consumer = Consumer(config['rabbitmq'], config['output'].keys())
     except pika.exceptions.AMQPError as exception:
-        logger.error('Rabbitmq connectivity error: %s', exception)
+        LOGGER.error('Rabbitmq connectivity error: %s', exception)
         return 1
 
     try:
-        database = Database(config['database'], config['output'])
+        database = Database(config['database'], config['output']).connect()
     except sqlalchemy.exc.SQLAlchemyError as exception:
-        logger.error(exception)
+        LOGGER.error(exception)
         return 1
 
     batcher = Batcher(database)
@@ -50,7 +50,7 @@ def main(argv=None):
     try:
         consumer.run()
     except KeyboardInterrupt:
-        logger.info('Interrupted by user')
+        LOGGER.info('Interrupted by user')
 
     return 0
 
@@ -74,9 +74,9 @@ def parse_arguments(argv):
         if not os.path.isfile(path):
             raise argparse.ArgumentTypeError('File not found')
 
-        with open(path) as fp:
+        with open(path) as file_:
             try:
-                data = yaml.load(fp)
+                data = yaml.load(file_)
             except yaml.YAMLError:
                 raise argparse.ArgumentTypeError('YAML parsing error')
 

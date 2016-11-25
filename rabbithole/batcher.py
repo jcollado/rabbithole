@@ -1,11 +1,20 @@
 # -*- coding: utf-8 -*-
 
+"""Batcher: group messages in batches before writing them to the database.
+
+The strategy to batch messages is:
+    - store them in memory as they are received
+    - send them to the database when either the size or the time limit is
+    exceeded.
+
+"""
+
 import logging
 import threading
 
 from collections import defaultdict
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class Batcher(object):
@@ -46,7 +55,7 @@ class Batcher(object):
         with self.locks[exchange_name]:
             batch = self.batches[exchange_name]
             batch.append(payload)
-            logger.debug(
+            LOGGER.debug(
                 'Message added to %r batch (size: %d)',
                 exchange_name,
                 len(batch),
@@ -55,7 +64,7 @@ class Batcher(object):
             if len(batch) == 1:
                 self.start_timer(exchange_name)
             elif len(batch) >= self.SIZE_LIMIT:
-                logger.debug(
+                LOGGER.debug(
                     'Size limit (%d) exceeded for %r',
                     self.SIZE_LIMIT,
                     exchange_name,
@@ -75,19 +84,19 @@ class Batcher(object):
         """
         # Use a lock to make sure that callback execution doesn't interleave
         with self.locks[exchange_name]:
-            logger.debug(
+            LOGGER.debug(
                 'Time limit (%.2f) exceeded for %r',
                 self.TIME_LIMIT,
                 exchange_name,
             )
             self.insert_batch(exchange_name)
             if exchange_name not in self.timers:
-                logger.warning('Timer not found for: %r', exchange_name)
+                LOGGER.warning('Timer not found for: %r', exchange_name)
                 return
             del self.timers[exchange_name]
 
         thread = threading.current_thread()
-        logger.debug(
+        LOGGER.debug(
             'Timer thread finished: (%d, %s)',
             thread.ident,
             thread.name,
@@ -106,7 +115,7 @@ class Batcher(object):
         """
         batch = self.batches[exchange_name]
         if not batch:
-            logger.warning('Nothing to insert: %r', exchange_name)
+            LOGGER.warning('Nothing to insert: %r', exchange_name)
             return
         self.database.insert(exchange_name, self.batches[exchange_name])
         del self.batches[exchange_name]
@@ -122,7 +131,7 @@ class Batcher(object):
 
         """
         if exchange_name in self.timers:
-            logger.warning('Timer already active for: %r', exchange_name)
+            LOGGER.warning('Timer already active for: %r', exchange_name)
             return
         timer = threading.Timer(
             self.TIME_LIMIT,
@@ -132,7 +141,7 @@ class Batcher(object):
         timer.name = 'timer-{}'.format(exchange_name)
         timer.daemon = True
         timer.start()
-        logger.debug('Timer thread started: (%d, %s)', timer.ident, timer.name)
+        LOGGER.debug('Timer thread started: (%d, %s)', timer.ident, timer.name)
         self.timers[exchange_name] = timer
 
     def cancel_timer(self, exchange_name):
@@ -147,10 +156,10 @@ class Batcher(object):
         """
         timer = self.timers.get(exchange_name)
         if timer is None:
-            logger.warning('Timer not found for: %r', exchange_name)
+            LOGGER.warning('Timer not found for: %r', exchange_name)
             return
         timer.cancel()
-        logger.debug(
+        LOGGER.debug(
             'Timer thread cancelled: (%d, %s)',
             timer.ident,
             timer.name,
