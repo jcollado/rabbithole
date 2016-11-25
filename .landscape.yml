@@ -1,0 +1,12 @@
+doc-warnings: true
+test-warnings: true
+strictness: high
+max-line-length: 80
+requirements:
+    - requirements/common.txt
+ignore-paths:
+    - docs
+    - travis_pypi_setup.py
+python-targets:
+    - 2
+    - 3
