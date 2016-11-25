@@ -9,6 +9,9 @@ Rabbit Hole
 .. image:: https://img.shields.io/travis/jcollado/rabbithole.svg
         :target: https://travis-ci.org/jcollado/rabbithole
 
+.. image:: https://coveralls.io/repos/github/jcollado/rabbithole/badge.svg?branch=master
+		:target: https://coveralls.io/github/jcollado/rabbithole?branch=master
+
 .. image:: https://readthedocs.org/projects/rabbitmqhole/badge/?version=latest
         :target: https://rabbitmqhole.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
