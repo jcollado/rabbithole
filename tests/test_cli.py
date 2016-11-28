@@ -2,10 +2,13 @@
 
 """CLI test cases."""
 
+import argparse
 import logging
 
 from unittest import TestCase
 
+import pika
+import sqlalchemy
 import yaml
 
 from mock import patch
@@ -13,8 +16,68 @@ from six import StringIO
 
 from rabbithole.cli import (
     configure_logging,
+    main,
     parse_arguments,
 )
+
+
+class TestMain(TestCase):
+
+    """Main entry point test cases."""
+
+    def setUp(self):
+        parse_arguments_patcher = patch('rabbithole.cli.parse_arguments')
+        parse_arguments_ = parse_arguments_patcher.start()
+        parse_arguments_.return_value = argparse.Namespace(
+            config={
+                'rabbitmq': '<rabbitmq server>',
+                'database': '<database url>',
+                'output': {
+                    'exchange#1': 'query#1',
+                    'exchange#2': 'query#2',
+                },
+            },
+            log_level=logging.CRITICAL,
+        )
+        self.addCleanup(parse_arguments_patcher.stop)
+
+    def test_exit_on_rabbitmq_error(self):
+        """Exit when there's a rabbitmq connectivity error."""
+        with patch('rabbithole.cli.Consumer') as consumer_cls:
+            consumer_cls.side_effect = pika.exceptions.AMQPError
+            return_code = main()
+            self.assertEqual(return_code, 1)
+
+    def test_exit_on_database_error(self):
+        """Exit when there's a database connectivity error."""
+        with patch('rabbithole.cli.Consumer'), \
+                patch('rabbithole.cli.Database') as database_cls:
+            database_cls.side_effect = sqlalchemy.exc.SQLAlchemyError
+            return_code = main()
+            self.assertEqual(return_code, 1)
+
+    def test_signals_connected(self):
+        """Signals are connected as expected."""
+        with patch('rabbithole.cli.Consumer') as consumer_cls, \
+                patch('rabbithole.cli.Database') as database_cls, \
+                patch('rabbithole.cli.Batcher') as batcher_cls:
+            return_code = main()
+
+            consumer_cls().message_received.connect.assert_called_once_with(
+                batcher_cls().message_received_cb)
+            batcher_cls().batch_ready.connect.assert_called_once_with(
+                database_cls().connect().batch_ready_cb)
+
+            self.assertEqual(return_code, 0)
+
+    def test_exit_on_keyboard_interrupt(self):
+        """Exit when user hits Ctrl+C."""
+        with patch('rabbithole.cli.Consumer') as consumer_cls, \
+                patch('rabbithole.cli.Database'), \
+                patch('rabbithole.cli.Batcher'):
+            consumer_cls().run.side_effect = KeyboardInterrupt
+            return_code = main()
+            self.assertEqual(return_code, 0)
 
 
 class TestParseArguments(TestCase):
