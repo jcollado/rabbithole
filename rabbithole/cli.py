@@ -7,6 +7,8 @@ import logging
 import os
 import sys
 
+from pprint import pformat
+
 import pika
 import sqlalchemy
 import yaml
@@ -31,6 +33,7 @@ def main(argv=None):
     args = parse_arguments(argv)
     config = args.config
     configure_logging(args.log_level)
+    logging.debug('Configuration:\n%s', pformat(config))
 
     try:
         consumer = Consumer(config['rabbitmq'], config['output'].keys())
@@ -44,7 +47,7 @@ def main(argv=None):
         LOGGER.error(exception)
         return 1
 
-    batcher = Batcher()
+    batcher = Batcher(config.get('size_limit'), config.get('time_limit'))
     consumer.message_received.connect(batcher.message_received_cb)
     batcher.batch_ready.connect(database.batch_ready_cb)
 

@@ -31,11 +31,14 @@ class Batcher(object):
 
     """
 
-    SIZE_LIMIT = 5
-    TIME_LIMIT = 15
+    DEFAULT_SIZE_LIMIT = 5
+    DEFAULT_TIME_LIMIT = 15
 
-    def __init__(self):
+    def __init__(self, size_limit, time_limit):
         """Initialize internal data structures."""
+        self.size_limit = size_limit or self.DEFAULT_SIZE_LIMIT
+        self.time_limit = time_limit or self.DEFAULT_TIME_LIMIT
+
         self.batches = defaultdict(list)
         self.locks = defaultdict(threading.Lock)
         self.timers = {}
@@ -63,15 +66,15 @@ class Batcher(object):
                 'Message added to %r batch (size: %d, capacity: %d)',
                 exchange_name,
                 len(batch),
-                self.SIZE_LIMIT,
+                self.size_limit,
             )
 
             if len(batch) == 1:
                 self.start_timer(exchange_name)
-            elif len(batch) >= self.SIZE_LIMIT:
+            elif len(batch) >= self.size_limit:
                 LOGGER.debug(
                     'Size limit (%d) exceeded for %r',
-                    self.SIZE_LIMIT,
+                    self.size_limit,
                     exchange_name,
                 )
                 self.queue_batch(exchange_name)
@@ -91,7 +94,7 @@ class Batcher(object):
         with self.locks[exchange_name]:
             LOGGER.debug(
                 'Time limit (%.2f) exceeded for %r',
-                self.TIME_LIMIT,
+                self.time_limit,
                 exchange_name,
             )
             self.queue_batch(exchange_name)
@@ -142,7 +145,7 @@ class Batcher(object):
             LOGGER.warning('Timer already active for: %r', exchange_name)
             return
         timer = threading.Timer(
-            self.TIME_LIMIT,
+            self.time_limit,
             self.time_expired_cb,
             (exchange_name, ),
         )
@@ -151,7 +154,7 @@ class Batcher(object):
         timer.start()
         LOGGER.debug(
             'Timer thread started (%.2f) for %r: (%d, %s)',
-            self.TIME_LIMIT,
+            self.time_limit,
             exchange_name,
             timer.ident,
             timer.name,
