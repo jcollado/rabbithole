@@ -90,4 +90,8 @@ class Consumer(object):
 
         channel.basic_ack(delivery_tag=method_frame.delivery_tag)
         payload = json.loads(body)
-        self.message_received.send(exchange_name, payload=payload)
+        self.message_received.send(
+            self,
+            exchange_name=exchange_name,
+            payload=payload,
+        )

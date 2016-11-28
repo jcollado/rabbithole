@@ -14,6 +14,8 @@ import threading
 
 from collections import defaultdict
 
+import blinker
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -21,8 +23,8 @@ class Batcher(object):
 
     """Group messages in batches before writing them to the database.
 
-    A batch is written to the database when either the size or the time limit
-    is exceeded.
+    A batch is queued for writing into the database when either the size or the
+    time limit is exceeded.
 
     :param database: Database to use to insert message batches
     :type database: rabbithole.db.Database
@@ -32,19 +34,21 @@ class Batcher(object):
     SIZE_LIMIT = 5
     TIME_LIMIT = 15
 
-    def __init__(self, database):
+    def __init__(self):
         """Initialize internal data structures."""
-        self.database = database
         self.batches = defaultdict(list)
         self.locks = defaultdict(threading.Lock)
         self.timers = {}
+        self.batch_ready = blinker.Signal()
 
-    def message_received_cb(self, exchange_name, payload):
+    def message_received_cb(self, sender, exchange_name, payload):
         """Handle message received event.
 
         This callback is executed when message is received by the AMQP
         consumer.
 
+        :param sender: The consumer who sent the message
+        :type sender: rabbithole.consumer.Consumer
         :param exchange_name: Key used to determine which query to execute
         :type exchange_name: str
         :param payload: Rows to insert in the database
@@ -56,9 +60,10 @@ class Batcher(object):
             batch = self.batches[exchange_name]
             batch.append(payload)
             LOGGER.debug(
-                'Message added to %r batch (size: %d)',
+                'Message added to %r batch (size: %d, capacity: %d)',
                 exchange_name,
                 len(batch),
+                self.SIZE_LIMIT,
             )
 
             if len(batch) == 1:
@@ -69,7 +74,7 @@ class Batcher(object):
                     self.SIZE_LIMIT,
                     exchange_name,
                 )
-                self.insert_batch(exchange_name)
+                self.queue_batch(exchange_name)
                 self.cancel_timer(exchange_name)
 
     def time_expired_cb(self, exchange_name):
@@ -89,7 +94,7 @@ class Batcher(object):
                 self.TIME_LIMIT,
                 exchange_name,
             )
-            self.insert_batch(exchange_name)
+            self.queue_batch(exchange_name)
             if exchange_name not in self.timers:
                 LOGGER.warning('Timer not found for: %r', exchange_name)
                 return
@@ -102,12 +107,11 @@ class Batcher(object):
             thread.name,
         )
 
-    def insert_batch(self, exchange_name):
-        """Insert batch into database.
+    def queue_batch(self, exchange_name):
+        """Queue batch for writing into database.
 
-        A batch is inserted into the database either by the main thread when
-        the size limit is exceeded or by a timer thread when the time limit is
-        exceeded.
+        A batch is queued either by the main thread when the size limit is
+        exceeded or by a timer thread when the time limit is exceeded.
 
         :param exchange_name: Exchange from which message batch was received
         :type exchange_name: str
@@ -115,9 +119,13 @@ class Batcher(object):
         """
         batch = self.batches[exchange_name]
         if not batch:
-            LOGGER.warning('Nothing to insert: %r', exchange_name)
+            LOGGER.warning('Nothing to queue for %r', exchange_name)
             return
-        self.database.insert(exchange_name, self.batches[exchange_name])
+        self.batch_ready.send(
+            self,
+            exchange_name=exchange_name,
+            batch=batch,
+        )
         del self.batches[exchange_name]
 
     def start_timer(self, exchange_name):
@@ -141,7 +149,13 @@ class Batcher(object):
         timer.name = 'timer-{}'.format(exchange_name)
         timer.daemon = True
         timer.start()
-        LOGGER.debug('Timer thread started: (%d, %s)', timer.ident, timer.name)
+        LOGGER.debug(
+            'Timer thread started (%.2f) for %r: (%d, %s)',
+            self.TIME_LIMIT,
+            exchange_name,
+            timer.ident,
+            timer.name,
+        )
         self.timers[exchange_name] = timer
 
     def cancel_timer(self, exchange_name):

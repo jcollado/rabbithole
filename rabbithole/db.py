@@ -41,20 +41,22 @@ class Database(object):
         LOGGER.debug('Connected to: %r', self.engine.url)
         return self
 
-    def insert(self, exchange_name, rows):
-        """Insert rows in database.
+    def batch_ready_cb(self, sender, exchange_name, batch):
+        """Execute insert query for the batch that is ready.
 
+        :param sender: The batcher who sent the batch_ready signal
+        :type sender: rabbithole.batcher.Batcher
         :param exchange_name: Key used to determine which query to execute
         :type exchange_name: str
-        :param rows: Row data to insert
+        :param batch: Batch of rows to insert
         :type rows: list(dict(str))
 
         """
         assert exchange_name in self.queries
         query = self.queries[exchange_name]
         try:
-            self.connection.execute(query, rows)
+            self.connection.execute(query, batch)
         except SQLAlchemyError as exception:
             LOGGER.error(exception)
         else:
-            LOGGER.debug('Inserted %d rows', len(rows))
+            LOGGER.debug('Inserted %d rows', len(batch))

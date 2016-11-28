@@ -44,8 +44,9 @@ def main(argv=None):
         LOGGER.error(exception)
         return 1
 
-    batcher = Batcher(database)
+    batcher = Batcher()
     consumer.message_received.connect(batcher.message_received_cb)
+    batcher.batch_ready.connect(database.batch_ready_cb)
 
     try:
         consumer.run()
