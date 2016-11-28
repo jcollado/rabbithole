@@ -89,9 +89,13 @@ class Consumer(object):
             return
 
         channel.basic_ack(delivery_tag=method_frame.delivery_tag)
-        payload = json.loads(body)
-        self.message_received.send(
-            self,
-            exchange_name=exchange_name,
-            payload=payload,
-        )
+        try:
+            payload = json.loads(body)
+        except ValueError:
+            LOGGER.warning('Body decoding error: %r', body)
+        else:
+            self.message_received.send(
+                self,
+                exchange_name=exchange_name,
+                payload=payload,
+            )

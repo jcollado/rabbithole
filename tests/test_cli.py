@@ -26,6 +26,7 @@ class TestMain(TestCase):
     """Main entry point test cases."""
 
     def setUp(self):
+        """Patch parse_arguments function."""
         parse_arguments_patcher = patch('rabbithole.cli.parse_arguments')
         parse_arguments_ = parse_arguments_patcher.start()
         parse_arguments_.return_value = argparse.Namespace(
