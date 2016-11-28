@@ -36,7 +36,9 @@ Store messages from rabbitmq into a SQL database
 Features
 --------
 
-* TODO
+* Get messages from multiple RabbitMQ exchanges
+* Group messages in batches
+* Write message batches to a SQL database
 
 Credits
 ---------
