@@ -52,7 +52,10 @@ class Database(object):
         :type rows: list(dict(str))
 
         """
-        assert exchange_name in self.queries
+        if exchange_name not in self.queries:
+            LOGGER.warning('No query found for %r', exchange_name)
+            return
+
         query = self.queries[exchange_name]
         try:
             self.connection.execute(query, batch)
