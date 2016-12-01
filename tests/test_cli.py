@@ -32,7 +32,7 @@ class TestMain(TestCase):
         parse_arguments_.return_value = argparse.Namespace(
             config={
                 'amqp': '<amqp server>',
-                'database': '<database url>',
+                'sql': '<database url>',
                 'output': {
                     'exchange#1': 'query#1',
                     'exchange#2': 'query#2',

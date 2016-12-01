@@ -20,7 +20,7 @@ where *config.yml* is a YAML configuration file. For example:
     size_limit: 5
     time_limit: 15
     amqp: '172.20.0.2'
-    database: 'postgres://postgres@172.20.0.3/database'
+    sql: 'postgres://postgres@172.20.0.3/database'
     output:
       logs:
         INSERT INTO logs (message, message_vector)
@@ -33,7 +33,7 @@ where:
     - *size_limit*: batcher size limit
     - *time_limit*: batcher size limit
     - *amqp*: AMQP server address
-    - *database*: Database connection URL
+    - *sql*: Database connection URL
     - *output*: Mapping from AMQP exchange names to SQL queries
 
 

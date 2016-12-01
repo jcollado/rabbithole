@@ -42,7 +42,7 @@ def main(argv=None):
         return 1
 
     try:
-        database = Database(config['database'], config['output']).connect()
+        database = Database(config['sql'], config['output']).connect()
     except sqlalchemy.exc.SQLAlchemyError as exception:
         LOGGER.error(exception)
         return 1
