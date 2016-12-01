@@ -31,7 +31,7 @@ class TestMain(TestCase):
         parse_arguments_ = parse_arguments_patcher.start()
         parse_arguments_.return_value = argparse.Namespace(
             config={
-                'rabbitmq': '<rabbitmq server>',
+                'amqp': '<amqp server>',
                 'database': '<database url>',
                 'output': {
                     'exchange#1': 'query#1',
@@ -42,8 +42,8 @@ class TestMain(TestCase):
         )
         self.addCleanup(parse_arguments_patcher.stop)
 
-    def test_exit_on_rabbitmq_error(self):
-        """Exit when there's a rabbitmq connectivity error."""
+    def test_exit_on_amqp_error(self):
+        """Exit when there's an AMQP connectivity error."""
         with patch('rabbithole.cli.Consumer') as consumer_cls:
             consumer_cls.side_effect = pika.exceptions.AMQPError
             return_code = main()

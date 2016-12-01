@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""RabbitHole: Store messages from rabbitmq into a SQL database.
+"""RabbitHole: Store messages from an AMQP into a SQL database.
 
 The way the message are stores is that each exchange name is mapped to a SQL
 query that is executed when neded.

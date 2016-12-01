@@ -11,7 +11,7 @@ from mock import (
     patch,
 )
 
-from rabbithole.consumer import Consumer
+from rabbithole.amqp import Consumer
 
 
 class TestConsumer(TestCase):
@@ -26,7 +26,7 @@ class TestConsumer(TestCase):
 
     def setUp(self):
         """Create fake channel."""
-        pika_patcher = patch('rabbithole.consumer.pika')
+        pika_patcher = patch('rabbithole.amqp.pika')
         pika = pika_patcher.start()
         self.addCleanup(pika_patcher.stop)
 
@@ -88,7 +88,7 @@ class TestConsumer(TestCase):
         header_frame = Mock()
         header_frame.content_type = 'application/json'
 
-        with patch('rabbithole.consumer.LOGGER') as logger:
+        with patch('rabbithole.amqp.LOGGER') as logger:
             consumer.message_received_cb(
                 channel,
                 method_frame,

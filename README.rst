@@ -31,12 +31,12 @@ Rabbit Hole
     :alt: Updates
 
 
-Store messages from rabbitmq into a SQL database
+Store messages from an AMQP server into a SQL database
 
 Features
 --------
 
-* Get messages from multiple RabbitMQ exchanges
+* Get messages from multiple AMQP exchanges
 * Group messages in batches
 * Write message batches to a SQL database
 

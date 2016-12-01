@@ -23,7 +23,7 @@ test_requirements = [
 setup(
     name='rabbithole',
     version='0.2.0',
-    description="Store messages from rabbitmq into a SQL database",
+    description="Store messages from an AMQP server into a SQL database",
     long_description=readme + '\n\n' + history,
     author="Javier Collado",
     author_email='javier@gigaspaces.com',

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-"""Consumer: get messages from rabbitmq.
+"""Consumer: get messages from amqp server.
 
 The strategy to get messages is:
-    - connect to the rabbitmq server
+    - connect to the amqp server
     - bind a queue to the desired exchanges
 
 Note that it's assumed that the exchanges will have `fanout` type and that the
@@ -22,9 +22,9 @@ LOGGER = logging.getLogger(__name__)
 
 class Consumer(object):
 
-    """Rabbitmq message consumer.
+    """AMQP message consumer.
 
-    :param server: Rabbitmq server IP address
+    :param server: AMQP server IP address
     :type server: str
     :param exchange_names: Exchange names to bind to
     :type exchange_names: list(str)
@@ -68,7 +68,7 @@ class Consumer(object):
     def message_received_cb(self, channel, method_frame, header_frame, body):
         """Handle message received.
 
-        :param channel: Connection channel with rabbitmq server
+        :param channel: Connection channel with AMQP server
         :type channel: pika.channel.Channel
         :param method_frame: AMPQ method related data
         :type method_frame: pika.spec.Deliver

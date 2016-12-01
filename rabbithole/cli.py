@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Store messages from rabbitmq into a SQL database."""
+"""Store messages from an AMQP server into a SQL database."""
 
 import argparse
 import logging
@@ -13,7 +13,7 @@ import pika
 import sqlalchemy
 import yaml
 
-from rabbithole.consumer import Consumer
+from rabbithole.amqp import Consumer
 from rabbithole.db import Database
 from rabbithole.batcher import Batcher
 
@@ -36,9 +36,9 @@ def main(argv=None):
     logging.debug('Configuration:\n%s', pformat(config))
 
     try:
-        consumer = Consumer(config['rabbitmq'], config['output'].keys())
+        consumer = Consumer(config['amqp'], config['output'].keys())
     except pika.exceptions.AMQPError as exception:
-        LOGGER.error('Rabbitmq connectivity error: %s', exception)
+        LOGGER.error('AMQP connectivity error: %s', exception)
         return 1
 
     try:

@@ -6,8 +6,8 @@ CLI
 ===
 
 Rabbit Hole is a command line tool that has been written as a lightweight
-alternative to logstash_ for the specific use case in which the *input* is
-*rabbitmq* and the *output* is a SQL database.
+alternative to logstash_ for the specific use case in which the *input* is an
+*amqp* server and the *output* is a SQL database.
 
 It can be executed from the command line like this::
 
@@ -19,7 +19,7 @@ where *config.yml* is a YAML configuration file. For example:
 
     size_limit: 5
     time_limit: 15
-    rabbitmq: '172.20.0.2'
+    amqp: '172.20.0.2'
     database: 'postgres://postgres@172.20.0.3/database'
     output:
       logs:
@@ -32,9 +32,9 @@ where *config.yml* is a YAML configuration file. For example:
 where:
     - *size_limit*: batcher size limit
     - *time_limit*: batcher size limit
-    - *rabbitmq*: RabbitMQ server address
+    - *amqp*: AMQP server address
     - *database*: Database connection URL
-    - *output*: Mapping from RabbitMQ exchange names to SQL queries
+    - *output*: Mapping from AMQP exchange names to SQL queries
 
 
 Building blocks
@@ -43,7 +43,7 @@ Building blocks
 Input
 -----
 
-RabbitMQ is assumed to be the messages input. What can be configured is the IP
+AMQP is assumed to be the messages input. What can be configured is the IP
 address of the server and the exchanges for which messages should be delivered
 specified as the keys of the *output* field.
 
