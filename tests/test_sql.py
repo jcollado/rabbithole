@@ -10,7 +10,7 @@ from mock import (
 )
 from sqlalchemy.exc import SQLAlchemyError
 
-from rabbithole.db import Database
+from rabbithole.sql import Database
 
 
 class TestConnect(TestCase):
@@ -41,7 +41,7 @@ class TestBatchReady(TestCase):
         """Warning written to logs if no query found."""
         exchange_name = '<exchange>'
 
-        with patch('rabbithole.db.LOGGER') as logger:
+        with patch('rabbithole.sql.LOGGER') as logger:
             self.database.batch_ready_cb('<sender>', exchange_name, [])
             logger.warning.assert_called_once_with(
                 'No query found for %r',
@@ -68,6 +68,6 @@ class TestBatchReady(TestCase):
 
         self.database.connection = Mock()
         self.database.connection.execute.side_effect = exception
-        with patch('rabbithole.db.LOGGER') as logger:
+        with patch('rabbithole.sql.LOGGER') as logger:
             self.database.batch_ready_cb('<sender>', exchange_name, batch)
             logger.error.assert_called_once_with(exception)

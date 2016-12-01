@@ -14,7 +14,7 @@ import sqlalchemy
 import yaml
 
 from rabbithole.amqp import Consumer
-from rabbithole.db import Database
+from rabbithole.sql import Database
 from rabbithole.batcher import Batcher
 
 LOGGER = logging.getLogger(__name__)

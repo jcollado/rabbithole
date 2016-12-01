@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-"""Batcher: group messages in batches before writing them to the database.
+"""Batcher: group messages in batches before sending them to the output
 
 The strategy to batch messages is:
     - store them in memory as they are received
-    - send them to the database when either the size or the time limit is
+    - send them to the output when either the size or the time limit is
     exceeded.
 
 """
@@ -21,13 +21,15 @@ LOGGER = logging.getLogger(__name__)
 
 class Batcher(object):
 
-    """Group messages in batches before writing them to the database.
+    """Group messages in batches before sending them to the output.
 
-    A batch is queued for writing into the database when either the size or the
-    time limit is exceeded.
+    A batch is sent to the output when either the size or the time limit is
+    exceeded.
 
-    :param database: Database to use to insert message batches
-    :type database: rabbithole.db.Database
+    :param size_limit: Capacity of the batcher in number of messages
+    :type size_limit: int
+    :param time_limit: Time before sending batch to the output in seconds
+    :type time_limit: int
 
     """
 
@@ -54,7 +56,7 @@ class Batcher(object):
         :type sender: rabbithole.consumer.Consumer
         :param exchange_name: Key used to determine which query to execute
         :type exchange_name: str
-        :param payload: Rows to insert in the database
+        :param payload: Records to send to the output
         :type payload: list(dict(str))
 
         """
@@ -111,7 +113,7 @@ class Batcher(object):
         )
 
     def queue_batch(self, exchange_name):
-        """Queue batch for writing into database.
+        """Queue batch before sending to the output.
 
         A batch is queued either by the main thread when the size limit is
         exceeded or by a timer thread when the time limit is exceeded.
@@ -134,8 +136,8 @@ class Batcher(object):
     def start_timer(self, exchange_name):
         """Start timer thread.
 
-        A timer thread is started to make sure that the batch will be inserted
-        into the database if the time limit is exceeded before the size limit.
+        A timer thread is started to make sure that the batch will be sent to
+        the output if the time limit is exceeded before the size limit.
 
         :param exchange_name: Exchange from which message batch was received
         :type exchange_name: str

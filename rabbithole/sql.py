@@ -25,7 +25,7 @@ class Database(object):
     """
 
     def __init__(self, url, queries):
-        """Connect to database."""
+        """Create database engine."""
         self.engine = create_engine(url)
         self.connection = None
 
