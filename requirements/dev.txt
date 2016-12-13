@@ -7,4 +7,4 @@ flake8==3.2.1
 tox==2.5.0
 coverage==4.2
 Sphinx==1.5
-cryptography==1.6
+cryptography==1.7
