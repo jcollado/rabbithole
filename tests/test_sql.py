@@ -13,61 +13,50 @@ from sqlalchemy.exc import SQLAlchemyError
 from rabbithole.sql import Database
 
 
-class TestConnect(TestCase):
+class TestDatabase(TestCase):
 
-    """Database connection test cases."""
-
-    def test_is_connected(self):
-        """Connection is open after call to connect."""
-        database = Database('sqlite://', {}).connect()
-        self.assertFalse(database.connection.closed)
-
-
-class TestBatchReady(TestCase):
-
-    """Database batch ready test cases."""
+    """Database test cases."""
 
     def setUp(self):
         """Create database object."""
-        self.database = Database(
-            'sqlite://',
-            {
-                'exchange#1': 'query#1',
-                'exchange#2': 'query#2',
-            },
-        ).connect()
+        self.database = Database('sqlite://')
 
-    def test_warning_on_query_not_found(self):
-        """Warning written to logs if no query found."""
-        exchange_name = '<exchange>'
+    def test_is_connected(self):
+        """Connection is open in instance."""
+        self.assertFalse(self.database.connection.closed)
 
-        with patch('rabbithole.sql.LOGGER') as logger:
-            self.database.batch_ready_cb('<sender>', exchange_name, [])
-            logger.warning.assert_called_once_with(
-                'No query found for %r',
-                exchange_name,
-            )
+    def test_partial_callback(self):
+        """Callback returned with query parameter set when instance called."""
+        raw_query = '<raw_query>'
+        text_query = '<text_query>'
+        batch = [1, 2, 3]
+
+        with patch('rabbithole.sql.text') as text:
+            text.return_value = text_query
+            callback = self.database(raw_query)
+
+        self.database.connection = Mock()
+        callback('<sender>', batch=batch)
+        self.database.connection.execute.assert_called_once_with(
+            text_query, batch)
 
     def test_query_executed(self):
-        """Query executed for the given exchange."""
-        exchange_name = 'exchange#1'
+        """Query executed when batch is ready."""
+        query = 'query'
         batch = [1, 2, 3]
 
         self.database.connection = Mock()
-        self.database.batch_ready_cb('<sender>', exchange_name, batch)
-        self.database.connection.execute.assert_called_once_with(
-            self.database.queries[exchange_name],
-            batch,
-        )
+        self.database.batch_ready_cb('<sender>', query, batch)
+        self.database.connection.execute.assert_called_once_with(query, batch)
 
-    def test_eror_on_database_error(self):
+    def test_error_on_database_error(self):
         """Error written to logs on query execution failure."""
-        exchange_name = 'exchange#1'
+        query = 'query'
         batch = [1, 2, 3]
         exception = SQLAlchemyError('<error>')
 
         self.database.connection = Mock()
         self.database.connection.execute.side_effect = exception
         with patch('rabbithole.sql.LOGGER') as logger:
-            self.database.batch_ready_cb('<sender>', exchange_name, batch)
-            logger.error.assert_called_once_with(exception)
+            self.database.batch_ready_cb('<sender>', query, batch)
+            self.assertEqual(logger.error.call_count, 2)

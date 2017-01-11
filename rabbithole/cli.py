@@ -6,11 +6,11 @@ import argparse
 import logging
 import os
 import sys
+import threading
+import traceback
 
 from pprint import pformat
 
-import pika
-import sqlalchemy
 import yaml
 
 from rabbithole.amqp import Consumer
@@ -35,24 +35,83 @@ def main(argv=None):
     configure_logging(args.log_level)
     logging.debug('Configuration:\n%s', pformat(config))
 
-    try:
-        consumer = Consumer(config['amqp'], config['output'].keys())
-    except pika.exceptions.AMQPError as exception:
-        LOGGER.error('AMQP connectivity error: %s', exception)
-        return 1
+    block_classes = {
+        'amqp': Consumer,
+        'sql': Database,
+    }
+    namespace = {}
+    for block in config['blocks']:
+        block_class = block_classes[block['type']]
+
+        try:
+            block_instance = block_class(
+                *block.get('args', []),
+                **block.get('kwargs', {})
+            )
+        except:
+            LOGGER.error(traceback.format_exc())
+            LOGGER.error(
+                'Unable to create %r block: (type: %r, args: %r, kwargs: %r)',
+                block['name'],
+                block['type'],
+                block.get('args', []),
+                block.get('kwargs', {}),
+            )
+            return 1
+
+        namespace[block['name']] = block_instance
+
+    for flow in config['flows']:
+        input_block, output_block = flow
+        input_block_instance = namespace[input_block['name']]
+
+        try:
+            input_signal = input_block_instance(
+                *input_block.get('args', []),
+                **input_block.get('kwargs', {})
+            )
+        except:
+            LOGGER.error(traceback.format_exc())
+            LOGGER.error(
+                'Unable to get signal from %r block: (args: %r, kwargs: %r)',
+                input_block['name'],
+                input_block.get('args', []),
+                input_block.get('kwargs', {}),
+            )
+            return 1
+
+        output_block_instance = namespace[output_block['name']]
+
+        try:
+            output_cb = output_block_instance(
+                *output_block.get('args', []),
+                **output_block.get('kwargs', {})
+            )
+        except:
+            LOGGER.error(traceback.format_exc())
+            LOGGER.error(
+                'Unable to get callback from %r block: (args: %r, kwargs: %r)',
+                output_block['name'],
+                output_block.get('args', []),
+                output_block.get('kwargs', {}),
+            )
+            return 1
+
+        batcher = Batcher(config.get('size_limit'), config.get('time_limit'))
+        input_signal.connect(batcher.message_received_cb, weak=False)
+        batcher.batch_ready.connect(output_cb, weak=False)
+
+    for block_name, block_instance in namespace.iteritems():
+        run_method = getattr(block_instance, 'run', None)
+        if run_method:
+            thread = threading.Thread(name=block_name, target=run_method)
+            thread.daemon = True
+            thread.start()
 
     try:
-        database = Database(config['sql'], config['output']).connect()
-    except sqlalchemy.exc.SQLAlchemyError as exception:
-        LOGGER.error(exception)
-        return 1
-
-    batcher = Batcher(config.get('size_limit'), config.get('time_limit'))
-    consumer.message_received.connect(batcher.message_received_cb)
-    batcher.batch_ready.connect(database.batch_ready_cb)
-
-    try:
-        consumer.run()
+        # Loop needed to be able to catch KeyboardInterrupt
+        while True:
+            thread.join(1)
     except KeyboardInterrupt:
         LOGGER.info('Interrupted by user')
 

@@ -26,13 +26,11 @@ class Consumer(object):
 
     :param server: AMQP server IP address
     :type server: str
-    :param exchange_names: Exchange names to bind to
-    :type exchange_names: list(str)
 
     """
 
-    def __init__(self, server, exchange_names):
-        """Configure exchanges and queue."""
+    def __init__(self, server):
+        """Configure queue."""
         LOGGER.info('Connecting to %r...', server)
         parameters = pika.ConnectionParameters(server)
         connection = pika.BlockingConnection(parameters)
@@ -43,22 +41,38 @@ class Consumer(object):
         queue_name = result.method.queue
         LOGGER.debug('Declared queue %r', queue_name)
 
-        for exchange_name in exchange_names:
-            channel.exchange_declare(
-                exchange=exchange_name,
-                exchange_type='fanout',
-            )
-            channel.queue_bind(
-                exchange=exchange_name,
-                queue=queue_name,
-            )
-            LOGGER.debug(
-                'Queue %r bound to exchange %r', queue_name, exchange_name)
-
         channel.basic_consume(self.message_received_cb, queue=queue_name)
 
         self.channel = channel
-        self.message_received = blinker.Signal()
+        self.queue_name = queue_name
+        self.signals = {}
+
+    def __call__(self, exchange_name):
+        """Create signal to send when a message from a exchange is received.
+
+        :param exchange_name: Exchange name to bind to the queue
+        :type exchange_name: str
+        :returns: The signal that will be send, so that it can be connected
+        :rtype: :class:`blinker.Signal`
+
+        """
+        if exchange_name in self.signals:
+            return self.signals[exchange_name]
+
+        self.channel.exchange_declare(
+            exchange=exchange_name,
+            exchange_type='fanout',
+        )
+        self.channel.queue_bind(
+            exchange=exchange_name,
+            queue=self.queue_name,
+        )
+        LOGGER.debug(
+            'Queue %r bound to exchange %r', self.queue_name, exchange_name)
+
+        signal = blinker.Signal()
+        self.signals[exchange_name] = signal
+        return signal
 
     def run(self):
         """Run ioloop and consume messages."""
@@ -94,8 +108,5 @@ class Consumer(object):
         except ValueError:
             LOGGER.warning('Body decoding error: %r', body)
         else:
-            self.message_received.send(
-                self,
-                exchange_name=exchange_name,
-                payload=payload,
-            )
+            signal = self.signals[exchange_name]
+            signal.send(self, payload=payload)

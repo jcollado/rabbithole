@@ -31,12 +31,38 @@ class TestMain(TestCase):
         parse_arguments_ = parse_arguments_patcher.start()
         parse_arguments_.return_value = argparse.Namespace(
             config={
-                'amqp': '<amqp server>',
-                'sql': '<database url>',
-                'output': {
-                    'exchange#1': 'query#1',
-                    'exchange#2': 'query#2',
-                },
+                'blocks': [
+                    {
+                        'name': 'input',
+                        'type': 'amqp',
+                        'kwargs': {
+                            'server': '<amqp server>',
+                        },
+                    },
+                    {
+                        'name': 'output',
+                        'type': 'sql',
+                        'kwargs': {
+                            'url': '<database url>',
+                        },
+                    },
+                ],
+                'flows': [
+                    [
+                        {
+                            'name': 'input',
+                            'kwargs': {
+                                'exchange_name': 'exchange#1',
+                            },
+                        },
+                        {
+                            'name': 'output',
+                            'kwargs': {
+                                'query': 'query#1',
+                            },
+                        },
+                    ],
+                ]
             },
             log_level=logging.CRITICAL,
         )
@@ -59,24 +85,33 @@ class TestMain(TestCase):
 
     def test_signals_connected(self):
         """Signals are connected as expected."""
-        with patch('rabbithole.cli.Consumer') as consumer_cls, \
+        with patch('rabbithole.cli.threading') as threading, \
+                patch('rabbithole.cli.Consumer') as consumer_cls, \
                 patch('rabbithole.cli.Database') as database_cls, \
                 patch('rabbithole.cli.Batcher') as batcher_cls:
+            threading.Thread().join.side_effect = KeyboardInterrupt
             return_code = main()
 
-            consumer_cls().message_received.connect.assert_called_once_with(
-                batcher_cls().message_received_cb)
-            batcher_cls().batch_ready.connect.assert_called_once_with(
-                database_cls().connect().batch_ready_cb)
+            input_signal = consumer_cls()('exchange#1')
+            input_signal.connect.assert_called_once_with(
+                batcher_cls().message_received_cb,
+                weak=False,
+            )
+            batcher_signal = batcher_cls().batch_ready
+            batcher_signal.connect.assert_called_once_with(
+                database_cls()('query#1'),
+                weak=False,
+            )
 
             self.assertEqual(return_code, 0)
 
     def test_exit_on_keyboard_interrupt(self):
         """Exit when user hits Ctrl+C."""
-        with patch('rabbithole.cli.Consumer') as consumer_cls, \
+        with patch('rabbithole.cli.threading') as threading, \
+                patch('rabbithole.cli.Consumer'), \
                 patch('rabbithole.cli.Database'), \
                 patch('rabbithole.cli.Batcher'):
-            consumer_cls().run.side_effect = KeyboardInterrupt
+            threading.Thread().join.side_effect = KeyboardInterrupt
             return_code = main()
             self.assertEqual(return_code, 0)
 
@@ -120,7 +155,8 @@ class TestConfigureLogging(TestCase):
 
     def tearDown(self):
         """Delete root logger handlers."""
-        logging.getLogger().handlers = []
+        root_logger = logging.getLogger()
+        root_logger.handlers = []
 
     def test_root_level_set_to_debug(self):
         """Root logger level set to debug."""
