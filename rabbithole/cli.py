@@ -11,6 +11,7 @@ import traceback
 
 from pprint import pformat
 
+import six
 import yaml
 
 from rabbithole.amqp import Consumer
@@ -101,7 +102,7 @@ def main(argv=None):
         input_signal.connect(batcher.message_received_cb, weak=False)
         batcher.batch_ready.connect(output_cb, weak=False)
 
-    for block_name, block_instance in namespace.iteritems():
+    for block_name, block_instance in six.iteritems(namespace):
         run_method = getattr(block_instance, 'run', None)
         if run_method:
             thread = threading.Thread(name=block_name, target=run_method)
