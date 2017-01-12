@@ -51,6 +51,7 @@ class TestMain(TestCase):
 class TestCreateBlockInstance(TestCase):
 
     """Create block instance test cases."""
+
     BLOCK_NAME = '<block_name>'
     BLOCK_TYPE = '<block_type>'
 
@@ -75,7 +76,7 @@ class TestCreateBlockInstance(TestCase):
         })
         self.block_class.assert_called_once_with(1, 2, 3, a=1, b=2, c=3)
 
-    def test_exit_on_block_instantiation_error(self):
+    def test_exit_on_instance_error(self):
         """Exit on block instantiation error."""
         self.block_class.side_effect = Exception
         with self.assertRaises(SystemExit) as context:
