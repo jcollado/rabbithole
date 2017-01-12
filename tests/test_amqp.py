@@ -6,6 +6,8 @@ import json
 
 from unittest import TestCase
 
+import blinker
+
 from mock import (
     MagicMock as Mock,
     patch,
@@ -18,12 +20,6 @@ class TestConsumer(TestCase):
 
     """Consumer test cases."""
 
-    QUEUE = '<queue_name>'
-    EXCHANGES = [
-        'exchange#1',
-        'exchange#2',
-    ]
-
     def setUp(self):
         """Create fake channel."""
         pika_patcher = patch('rabbithole.amqp.pika')
@@ -32,55 +28,89 @@ class TestConsumer(TestCase):
 
         self.channel = pika.BlockingConnection().channel()
 
+    def test_queue_declared(self):
+        """Consumer declares a queue on initialization."""
+        Consumer('server')
+        self.channel.queue_declare.assert_called_with(auto_delete=True)
+
     def test_exchanges_declared(self):
-        """Consumer declares exhanges on initialization"""
-        Consumer('<server>', self.EXCHANGES)
-        for exchange in self.EXCHANGES:
-            self.channel.exchange_declare.assert_any_call(
-                exchange=exchange,
-                exchange_type='fanout',
-            )
+        """Consumer declares exchanges and returns signal when invoked."""
+        exchange = '<exchange>'
+
+        consumer = Consumer('<server>')
+        signal = consumer(exchange)
+
+        self.channel.exchange_declare.assert_called_with(
+            exchange=exchange,
+            exchange_type='fanout',
+        )
+        self.assertIsInstance(signal, blinker.Signal)
+
+    def test_signal_call_idempotent(self):
+        """Same signal is returned when consumer is invoked multiple times."""
+        exchange = '<exchange>'
+
+        consumer = Consumer('<server>')
+        signal_1 = consumer(exchange)
+        signal_2 = consumer(exchange)
+        self.assertIs(signal_1, signal_2)
 
     def test_queue_bound(self):
-        """Queue is bound to the exchanges."""
-        self.channel.queue_declare().method.queue = self.QUEUE
-        Consumer('<server>', self.EXCHANGES)
-        for exchange in self.EXCHANGES:
-            self.channel.queue_bind.assert_any_call(
-                exchange=exchange,
-                queue=self.QUEUE,
-            )
+        """Queue is bound to the exchange."""
+        queue = '<queue>'
+        exchange = '<exchange>'
+
+        self.channel.queue_declare().method.queue = queue
+        consumer = Consumer('<server>')
+        consumer(exchange)
+        self.channel.queue_bind.assert_called_with(
+            exchange=exchange,
+            queue=queue,
+        )
 
     def test_run(self):
         """Consumer starts consuming when run is called."""
-        consumer = Consumer('<server>', self.EXCHANGES)
+        exchange = '<exchange>'
+
+        consumer = Consumer('<server>')
+        consumer(exchange)
         consumer.run()
         self.channel.start_consuming.assert_called_once_with()
 
     def test_message_content_type(self):
         """Message is discarded based on content_type."""
-        consumer = Consumer('<server>', self.EXCHANGES)
+        exchange = '<exchange>'
+        content_type = 'text/plain'
+
+        consumer = Consumer('<server>')
+        consumer(exchange)
 
         channel = Mock()
         method_frame = Mock()
         header_frame = Mock()
-        header_frame.content_type = 'text/plain'
-        consumer.message_received_cb(
-            channel,
-            method_frame,
-            header_frame,
-            '<body>',
-        )
+        header_frame.content_type = content_type
+        with patch('rabbithole.amqp.LOGGER') as logger:
+            consumer.message_received_cb(
+                channel,
+                method_frame,
+                header_frame,
+                '<body>',
+            )
+            logger.warning.assert_called_with(
+                'Message discarded. Unexpected content type: %r', content_type)
 
-        channel.basic_nack.assert_called_with(
-            method_frame.delivery_tag,
-            requeue=False,
-        )
+            channel.basic_nack.assert_called_with(
+                method_frame.delivery_tag,
+                requeue=False,
+            )
 
     def test_message_decoding_error(self):
         """Warning written to logs when body cannot be decoded."""
+        exchange = '<exchange>'
         body = '<body>'
-        consumer = Consumer('<server>', self.EXCHANGES)
+
+        consumer = Consumer('<server>')
+        consumer(exchange)
 
         consumer.message_received = Mock()
         channel = Mock()
@@ -102,12 +132,22 @@ class TestConsumer(TestCase):
 
     def test_message_received(self):
         """Message received signal is sent if message is correct."""
+        exchange = '<exchange>'
         body = '<body>'
-        consumer = Consumer('<server>', self.EXCHANGES)
 
-        consumer.message_received = Mock()
+        consumer = Consumer('<server>')
+        signal = consumer(exchange)
+
+        def verify(sender, payload):
+            """Verify signal is sent as expected."""
+            self.assertEqual(sender, consumer)
+            self.assertEqual(payload, body)
+
+        signal.connect(verify)
+
         channel = Mock()
         method_frame = Mock()
+        method_frame.exchange = exchange
         header_frame = Mock()
         header_frame.content_type = 'application/json'
         consumer.message_received_cb(
@@ -119,8 +159,3 @@ class TestConsumer(TestCase):
 
         channel.basic_ack.assert_called_with(
             delivery_tag=method_frame.delivery_tag)
-        consumer.message_received.send.assert_called_with(
-            consumer,
-            exchange_name=method_frame.exchange,
-            payload=body,
-        )

@@ -25,83 +25,68 @@ class TestBatcher(TestCase):
 
     def test_first_message_received(self):
         """Message appended to batch and timer started."""
-        exchange = 'exchange'
         payload = 'payload'
 
         self.batcher.batch_ready = Mock()
         with patch('rabbithole.batcher.threading') as threading:
-            self.batcher.message_received_cb('sender', exchange, payload)
+            self.batcher.message_received_cb('sender', payload)
             threading.Timer.assert_called_once_with(
                 self.batcher.time_limit,
                 self.batcher.time_expired_cb,
-                (exchange, ),
             )
-        self.assertListEqual(self.batcher.batches[exchange], [payload])
+        self.assertListEqual(self.batcher.batch, [payload])
 
     def test_size_limit_exceeded(self):
         """Batch queued when size limit is exceed."""
-        exchange = 'exchange'
         payload = 'payload'
 
         self.batcher.batch_ready = Mock()
         with patch('rabbithole.batcher.threading'):
             for _ in range(self.batcher.size_limit):
-                self.batcher.message_received_cb('sender', exchange, payload)
+                self.batcher.message_received_cb('sender', payload)
 
         self.batcher.batch_ready.send.assert_called_with(
             self.batcher,
-            exchange_name=exchange,
             batch=[payload] * self.batcher.size_limit,
         )
-        self.assertListEqual(self.batcher.batches[exchange], [])
+        self.assertListEqual(self.batcher.batch, [])
 
     def test_time_limit_exceeded(self):
-        """Batch queued whem time limit is exceeded."""
-        exchange = 'exchange'
+        """Batch queued when time limit is exceeded."""
         payload = 'payload'
 
         self.batcher.batch_ready = Mock()
         with patch('rabbithole.batcher.threading'):
-            self.batcher.message_received_cb('sender', exchange, payload)
-        self.batcher.time_expired_cb(exchange)
+            self.batcher.message_received_cb('sender', payload)
+        self.batcher.time_expired_cb()
 
         self.batcher.batch_ready.send.assert_called_with(
             self.batcher,
-            exchange_name=exchange,
             batch=[payload],
         )
-        self.assertListEqual(self.batcher.batches[exchange], [])
+        self.assertListEqual(self.batcher.batch, [])
 
-    def test_expired_timer_not_found(self):
-        """Warning written to logs when expired timer is not found."""
-        exchange = 'exchange'
-
+    def test_empty_batch(self):
+        """Warning written to logs when batch is empty."""
         with patch('rabbithole.batcher.LOGGER') as logger:
-            self.batcher.time_expired_cb(exchange)
-            logger.warning.assert_called_with(
-                'Timer not found for: %r',
-                exchange,
-            )
+            self.batcher.queue_batch()
+            logger.warning.assert_called_with('Nothing to queue')
+
+    def test_expired_timer_not_active(self):
+        """Warning written to logs when expired timer is not active."""
+        with patch('rabbithole.batcher.LOGGER') as logger:
+            self.batcher.time_expired_cb()
+            logger.warning.assert_called_with('Timer is not active')
 
     def test_timer_already_active(self):
-        """Warning written to logs when timer is alreadya active."""
-        exchange = 'exchange'
-
-        self.batcher.timers[exchange] = Mock()
+        """Warning written to logs when timer is already active."""
+        self.batcher.timer = Mock()
         with patch('rabbithole.batcher.LOGGER') as logger:
-            self.batcher.start_timer(exchange)
-            logger.warning.assert_called_with(
-                'Timer already active for: %r',
-                exchange,
-            )
+            self.batcher.start_timer()
+            logger.warning.assert_called_with('Timer already active')
 
-    def test_cancelled_timer_not_found(self):
-        """Warning written to logs when cancelled timer is not found."""
-        exchange = 'exchange'
-
+    def test_cancelled_timer_not_active(self):
+        """Warning written to logs when cancelled timer is not active."""
         with patch('rabbithole.batcher.LOGGER') as logger:
-            self.batcher.cancel_timer(exchange)
-            logger.warning.assert_called_with(
-                'Timer not found for: %r',
-                exchange,
-            )
+            self.batcher.cancel_timer()
+            logger.warning.assert_called_with('Timer is not active')

@@ -3,6 +3,9 @@
 """Database: run queries with batches of rows per exchange."""
 
 import logging
+import traceback
+
+from functools import partial
 
 from sqlalchemy import (
     create_engine,
@@ -19,47 +22,43 @@ class Database(object):
 
     :param url: Database connection string
     :type url: str
-    :param queries: Insert query to execute for each exchange name
-    :type queries: dict(str, str)
 
     """
 
-    def __init__(self, url, queries):
+    def __init__(self, url):
         """Create database engine."""
-        self.engine = create_engine(url)
-        self.connection = None
+        engine = create_engine(url)
+        self.connection = engine.connect()
+        LOGGER.debug('Connected to: %r', url)
 
-        self.queries = {
-            exchange_name: text(query)
-            for exchange_name, query
-            in queries.items()
-        }
+    def __call__(self, query):
+        """Return callback to use when a batch is ready.
 
-    def connect(self):
-        """Connect to the database."""
-        self.connection = self.engine.connect()
-        LOGGER.debug('Connected to: %r', self.engine.url)
-        return self
+        :param query: The query to execute to insert the batch
+        :type query: str
 
-    def batch_ready_cb(self, sender, exchange_name, batch):
+        """
+        return partial(self.batch_ready_cb, query=text(query))
+
+    def batch_ready_cb(self, sender, query, batch):
         """Execute insert query for the batch that is ready.
 
         :param sender: The batcher who sent the batch_ready signal
         :type sender: rabbithole.batcher.Batcher
-        :param exchange_name: Key used to determine which query to execute
-        :type exchange_name: str
+        :param query: The query to execute to insert the batch
+        :type query: :class:`sqlalchemy.sql.elements.TextClause`
         :param batch: Batch of rows to insert
         :type rows: list(dict(str))
 
         """
-        if exchange_name not in self.queries:
-            LOGGER.warning('No query found for %r', exchange_name)
-            return
-
-        query = self.queries[exchange_name]
         try:
             self.connection.execute(query, batch)
-        except SQLAlchemyError as exception:
-            LOGGER.error(exception)
+        except SQLAlchemyError:
+            LOGGER.error(traceback.format_exc())
+            LOGGER.error(
+                'Query execution error:\n- query: %s\n- batch: %r',
+                query,
+                batch,
+            )
         else:
             LOGGER.debug('Inserted %d rows', len(batch))
