@@ -46,6 +46,15 @@ class TestConsumer(TestCase):
         )
         self.assertIsInstance(signal, blinker.Signal)
 
+    def test_signal_call_idempotent(self):
+        """Same signal is returned when consumer is invoked multiple times."""
+        exchange = '<exchange>'
+
+        consumer = Consumer('<server>')
+        signal_1 = consumer(exchange)
+        signal_2 = consumer(exchange)
+        self.assertIs(signal_1, signal_2)
+
     def test_queue_bound(self):
         """Queue is bound to the exchange."""
         queue = '<queue>'

@@ -66,6 +66,12 @@ class TestBatcher(TestCase):
         )
         self.assertListEqual(self.batcher.batch, [])
 
+    def test_empty_batch(self):
+        """Warning written to logs when batch is empty."""
+        with patch('rabbithole.batcher.LOGGER') as logger:
+            self.batcher.queue_batch()
+            logger.warning.assert_called_with('Nothing to queue')
+
     def test_expired_timer_not_active(self):
         """Warning written to logs when expired timer is not active."""
         with patch('rabbithole.batcher.LOGGER') as logger:
