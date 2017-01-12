@@ -4,6 +4,14 @@ rabbithole package
 Submodules
 ----------
 
+rabbithole.amqp module
+----------------------
+
+.. automodule:: rabbithole.amqp
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 rabbithole.batcher module
 -------------------------
 
@@ -20,18 +28,10 @@ rabbithole.cli module
     :undoc-members:
     :show-inheritance:
 
-rabbithole.consumer module
---------------------------
+rabbithole.sql module
+---------------------
 
-.. automodule:: rabbithole.consumer
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-rabbithole.db module
---------------------
-
-.. automodule:: rabbithole.db
+.. automodule:: rabbithole.sql
     :members:
     :undoc-members:
     :show-inheritance:

@@ -5,7 +5,7 @@
 The strategy to batch messages is:
     - store them in memory as they are received
     - send them to the output when either the size or the time limit is
-    exceeded.
+      exceeded.
 
 """
 
