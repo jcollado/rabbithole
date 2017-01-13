@@ -151,12 +151,16 @@ def run_input_blocks(namespace):
     :type namespace: dict(str, instance)
 
     """
+    threads = []
     for block_name, block_instance in six.iteritems(namespace):
         run_method = getattr(block_instance, 'run', None)
         if run_method:
             thread = threading.Thread(name=block_name, target=run_method)
             thread.daemon = True
             thread.start()
+            threads.append(thread)
+
+    return threads
 
 
 def parse_arguments(argv):

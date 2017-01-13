@@ -150,7 +150,9 @@ class TestRunInputBlocks(TestCase):
         namespace = {
             '<name>': block_instance,
         }
-        run_input_blocks(namespace)
+        threads = run_input_blocks(namespace)
+        for thread in threads:
+            thread.join()
         block_instance.run.assert_called_once_with()
 
 
