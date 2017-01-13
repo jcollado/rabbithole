@@ -7,6 +7,7 @@ requirements:
 ignore-paths:
     - docs
     - travis_pypi_setup.py
+    - stubs
 python-targets:
     - 2
     - 3
