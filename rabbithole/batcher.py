@@ -14,6 +14,12 @@ import threading
 
 import blinker
 
+from typing import (  # noqa
+    Dict,
+    List,
+    Optional,
+)
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -35,25 +41,27 @@ class Batcher(object):
     DEFAULT_TIME_LIMIT = 15
 
     def __init__(self, size_limit=None, time_limit=None):
+        # type: (int, int) -> None
         """Initialize internal data structures."""
         self.size_limit = size_limit or self.DEFAULT_SIZE_LIMIT
         self.time_limit = time_limit or self.DEFAULT_TIME_LIMIT
 
-        self.batch = []
+        self.batch = []  # type: List[Dict[str, object]]
         self.lock = threading.Lock()
-        self.timer = None
+        self.timer = None  # type: Optional[threading.Timer]
         self.batch_ready = blinker.Signal()
 
     def message_received_cb(self, sender, payload):
+        # type: (object, Dict[str, object]) -> None
         """Handle message received event.
 
         This callback is executed when message is received by the AMQP
         consumer.
 
         :param sender: The consumer who sent the message
-        :type sender: rabbithole.consumer.Consumer
-        :param payload: Records to send to the output
-        :type payload: list(dict(str))
+        :type sender: object
+        :param payload: Record to send to the output
+        :type payload: dict(str)
 
         """
         # Use a lock to make sure that callback execution doesn't interleave
@@ -73,6 +81,7 @@ class Batcher(object):
                 self.cancel_timer()
 
     def time_expired_cb(self):
+        # type: () -> None
         """Handle time expired event.
 
         This callback is executed in a timer thread when the time limit for a
@@ -96,6 +105,7 @@ class Batcher(object):
         )
 
     def queue_batch(self):
+        # type: () -> None
         """Queue batch before sending to the output.
 
         A batch is queued either by the main thread when the size limit is
@@ -112,6 +122,7 @@ class Batcher(object):
         self.batch = []
 
     def start_timer(self):
+        # type: () -> None
         """Start timer thread.
 
         A timer thread is started to make sure that the batch will be sent to
@@ -133,6 +144,7 @@ class Batcher(object):
         self.timer = timer
 
     def cancel_timer(self):
+        # type: () -> None
         """Cancel timer thread.
 
         A timer thread might be cancelled if the size limit for a batch is

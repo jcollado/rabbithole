@@ -15,6 +15,11 @@ from pprint import pformat
 import six
 import yaml
 
+from typing import (  # noqa
+    Any,
+    List,
+)
+
 from rabbithole.amqp import Consumer
 from rabbithole.sql import Database
 from rabbithole.batcher import Batcher
@@ -27,6 +32,7 @@ BLOCK_CLASSES = {
 
 
 def main(argv=None):
+    # type: (List[str]) -> int
     """Console script for rabbithole
 
     :param argv: Command line arguments
@@ -64,6 +70,7 @@ def main(argv=None):
 
 
 def create_block_instance(block):
+    # type: (Dict[str, Any]) -> object
     """Create block instance from its configuration
 
     :param block: Block configuration
@@ -94,6 +101,7 @@ def create_block_instance(block):
 
 
 def create_flow(flow, namespace, batcher_config):
+    # type: (List[Dict[str, Any]], Dict[str, Any], Dict[str, int]) -> None
     """Create flow by connecting block signals.
 
     :param flow: Flow configuration
