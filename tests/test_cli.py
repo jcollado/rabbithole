@@ -9,7 +9,7 @@ from unittest import TestCase
 import yaml
 
 from mock import (
-    Mock,
+    MagicMock as Mock,
     patch,
 )
 from six import StringIO
