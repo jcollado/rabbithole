@@ -17,7 +17,10 @@ requirements = [
 ]
 
 test_requirements = [
-    # TODO: put package test requirements here
+    'coveralls',
+    'mock',
+    'pytest',
+    'tox',
 ]
 
 setup(
