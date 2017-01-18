@@ -1,2 +1,2 @@
 -r test.txt
-typing
+typing==3.5.3.0
