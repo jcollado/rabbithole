@@ -17,6 +17,8 @@ import logging
 import blinker
 import pika
 
+from typing import Dict  # noqa
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -30,6 +32,7 @@ class Consumer(object):
     """
 
     def __init__(self, server):
+        # type: (str) -> None
         """Configure queue."""
         LOGGER.info('Connecting to %r...', server)
         parameters = pika.ConnectionParameters(server)
@@ -45,9 +48,10 @@ class Consumer(object):
 
         self.channel = channel
         self.queue_name = queue_name
-        self.signals = {}
+        self.signals = {}  # type: Dict[str, blinker.Signal]
 
     def __call__(self, exchange_name):
+        # type: (str) -> blinker.Signal
         """Create signal to send when a message from a exchange is received.
 
         :param exchange_name: Exchange name to bind to the queue
@@ -75,6 +79,7 @@ class Consumer(object):
         return signal
 
     def run(self):
+        # type: () -> None
         """Run ioloop and consume messages."""
         logging.info('Waiting for messages...')
         self.channel.start_consuming()
@@ -84,8 +89,10 @@ class Consumer(object):
 
         :param channel: Connection channel with AMQP server
         :type channel: pika.channel.Channel
-        :param method_frame: AMPQ method related data
+        :param method_frame: AMQP method related data
         :type method_frame: pika.spec.Deliver
+        :param header_frame: AMQP message related data
+        :type header_frame: pika.spec.BasicProperties
         :param body: Message body
         :type body: str
 

@@ -15,6 +15,11 @@ from pprint import pformat
 import six
 import yaml
 
+from typing import (  # noqa
+    Any,
+    List,
+)
+
 from rabbithole.amqp import Consumer
 from rabbithole.sql import Database
 from rabbithole.batcher import Batcher
@@ -27,6 +32,7 @@ BLOCK_CLASSES = {
 
 
 def main(argv=None):
+    # type: (List[str]) -> int
     """Console script for rabbithole
 
     :param argv: Command line arguments
@@ -37,8 +43,8 @@ def main(argv=None):
         argv = sys.argv[1:]
 
     args = parse_arguments(argv)
-    config = args.config
-    configure_logging(args.log_level)
+    config = args['config']
+    configure_logging(args['log_level'])
     logging.debug('Configuration:\n%s', pformat(config))
 
     namespace = {
@@ -64,6 +70,7 @@ def main(argv=None):
 
 
 def create_block_instance(block):
+    # type: (Dict[str, Any]) -> object
     """Create block instance from its configuration
 
     :param block: Block configuration
@@ -94,6 +101,7 @@ def create_block_instance(block):
 
 
 def create_flow(flow, namespace, batcher_config):
+    # type: (List[Dict[str, Any]], Dict[str, Any], Dict[str, int]) -> None
     """Create flow by connecting block signals.
 
     :param flow: Flow configuration
@@ -145,6 +153,7 @@ def create_flow(flow, namespace, batcher_config):
 
 
 def run_input_blocks(namespace):
+    # type: (Dict[str, object]) -> List[threading.Thread]
     """Run inputs blocks and start receiving messages from them.
 
     :param namespace: Block instances namespace
@@ -164,8 +173,11 @@ def run_input_blocks(namespace):
 
 
 def parse_arguments(argv):
+    # type: (List[str]) -> Dict[str, Any]
     """Parse command line arguments.
 
+    :param argv: Command line arguments
+    :type argv: list(str)
     :returns: Parsed arguments
     :rtype: argparse.Namespace
 
@@ -173,6 +185,7 @@ def parse_arguments(argv):
     parser = argparse.ArgumentParser(description=__doc__)
 
     def yaml_file(path):
+        # type: (str) -> str
         """Yaml file argument.
 
         :param path: Path to the yaml file
@@ -206,12 +219,13 @@ def parse_arguments(argv):
               '(%(default)s by default)'
               .format(', '.join(log_levels[:-1]), log_levels[-1])))
 
-    args = parser.parse_args(argv)
-    args.log_level = getattr(logging, args.log_level.upper())
+    args = vars(parser.parse_args(argv))
+    args['log_level'] = getattr(logging, args['log_level'].upper())
     return args
 
 
 def configure_logging(log_level):
+    # type: (int) -> None
     """Configure logging based on command line argument.
 
     :param log_level: Log level passed form the command line

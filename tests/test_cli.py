@@ -9,7 +9,7 @@ from unittest import TestCase
 import yaml
 
 from mock import (
-    Mock,
+    MagicMock as Mock,
     patch,
 )
 from six import StringIO
@@ -186,7 +186,7 @@ class TestParseArguments(TestCase):
                 StringIO(yaml.dump(expected_value)))
             args = parse_arguments(['some file'])
 
-        self.assertDictEqual(args.config, expected_value)
+        self.assertDictEqual(args['config'], expected_value)
 
 
 class TestConfigureLogging(TestCase):

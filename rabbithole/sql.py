@@ -26,12 +26,14 @@ class Database(object):
     """
 
     def __init__(self, url):
+        # type: (str) -> None
         """Create database engine."""
         engine = create_engine(url)
         self.connection = engine.connect()
         LOGGER.debug('Connected to: %r', url)
 
     def __call__(self, query):
+        # type: (str) -> partial
         """Return callback to use when a batch is ready.
 
         :param query: The query to execute to insert the batch
@@ -41,6 +43,7 @@ class Database(object):
         return partial(self.batch_ready_cb, query=text(query))
 
     def batch_ready_cb(self, sender, query, batch):
+        # type: (object, object, List[Dict[str, object]]) -> None
         """Execute insert query for the batch that is ready.
 
         :param sender: The batcher who sent the batch_ready signal
