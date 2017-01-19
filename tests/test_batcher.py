@@ -8,7 +8,7 @@ from mock import (
     MagicMock as Mock,
     patch,
 )
-from six.moves import range
+from six.moves import range  # pylint:disable=redefined-builtin
 
 from rabbithole.batcher import Batcher
 
