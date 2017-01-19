@@ -13,8 +13,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from rabbithole.sql import Database
 
 
-@pytest.fixture
-def database():
+@pytest.fixture(name='database')
+def fixture_database():
     """Create database object."""
     return Database('sqlite://')
 

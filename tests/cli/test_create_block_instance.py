@@ -15,8 +15,8 @@ BLOCK_NAME = '<block_name>'
 BLOCK_TYPE = '<block_type>'
 
 
-@pytest.fixture
-def block_class():
+@pytest.fixture(name='block_class')
+def fixture_block_class():
     """Patch available block classes."""
     block_class = Mock()
 

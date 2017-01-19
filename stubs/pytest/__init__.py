@@ -1,4 +1,4 @@
 from . import mark
 
-def fixture(fn):
+def fixture(name):
     pass

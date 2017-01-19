@@ -15,8 +15,8 @@ from mock import (
 from rabbithole.amqp import Consumer
 
 
-@pytest.fixture
-def pika():
+@pytest.fixture(name='pika')
+def fixture_pika():
     """Patch the pika module."""
     pika_patcher = patch('rabbithole.amqp.pika')
     pika = pika_patcher.start()
@@ -24,8 +24,8 @@ def pika():
     pika_patcher.stop()
 
 
-@pytest.fixture
-def channel(pika):
+@pytest.fixture(name='channel')
+def fixture_channel(pika):
     """Create a mock channel."""
     channel = pika.BlockingConnection().channel()
     return channel

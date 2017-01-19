@@ -12,20 +12,20 @@ from mock import (
 from rabbithole.cli import create_flow
 
 
-@pytest.fixture
-def input_block():
+@pytest.fixture(name='input_block')
+def fixture_input_block():
     """Create mock input block."""
     return Mock()
 
 
-@pytest.fixture
-def output_block():
+@pytest.fixture(name='output_block')
+def fixture_output_block():
     """Create mock output block."""
     return Mock()
 
 
-@pytest.fixture
-def kwargs(input_block, output_block):
+@pytest.fixture(name='kwargs')
+def fixture_kwargs(input_block, output_block):
     """Create flow kwargs."""
     return {
         'flow': [

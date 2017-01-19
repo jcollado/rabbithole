@@ -13,8 +13,8 @@ from six.moves import range
 from rabbithole.batcher import Batcher
 
 
-@pytest.fixture
-def batcher():
+@pytest.fixture(name='batcher')
+def fixture_batcher():
     """Create a batcher instance."""
     size_limit = 5
     time_limit = 15
