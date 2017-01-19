@@ -1,0 +1,2 @@
+def usefixtures(*args):
+    pass
