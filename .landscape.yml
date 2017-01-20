@@ -1,6 +1,6 @@
 doc-warnings: true
 test-warnings: true
-strictness: high
+strictness: veryhigh
 max-line-length: 80
 requirements:
     - requirements/common.txt
