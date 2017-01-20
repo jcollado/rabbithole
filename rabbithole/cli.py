@@ -86,7 +86,7 @@ def create_block_instance(block):
             *block.get('args', []),
             **block.get('kwargs', {})
         )
-    except Exception:
+    except Exception:  # pylint:disable=broad-except
         LOGGER.error(traceback.format_exc())
         LOGGER.error(
             'Unable to create %r block: (type: %r, args: %r, kwargs: %r)',
@@ -120,7 +120,7 @@ def create_flow(flow, namespace, batcher_config):
             *input_block.get('args', []),
             **input_block.get('kwargs', {})
         )
-    except Exception:
+    except Exception:  # pylint:disable=broad-except
         LOGGER.error(traceback.format_exc())
         LOGGER.error(
             'Unable to get signal from %r block: (args: %r, kwargs: %r)',
@@ -137,7 +137,7 @@ def create_flow(flow, namespace, batcher_config):
             *output_block.get('args', []),
             **output_block.get('kwargs', {})
         )
-    except Exception:
+    except Exception:  # pylint:disable=broad-except
         LOGGER.error(traceback.format_exc())
         LOGGER.error(
             'Unable to get callback from %r block: (args: %r, kwargs: %r)',
