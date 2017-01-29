@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Batcher: group messages in batches before sending them to the output
+"""Batcher: group messages in batches before sending them to the output.
 
 The strategy to batch messages is:
     - store them in memory as they are received

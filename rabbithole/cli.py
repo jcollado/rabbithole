@@ -33,7 +33,7 @@ BLOCK_CLASSES = {
 
 def main(argv=None):
     # type: (List[str]) -> int
-    """Console script for rabbithole
+    """Console script for rabbithole.
 
     :param argv: Command line arguments
     :type argv: list(str)
@@ -71,7 +71,7 @@ def main(argv=None):
 
 def create_block_instance(block):
     # type: (Dict[str, Any]) -> object
-    """Create block instance from its configuration
+    """Create block instance from its configuration.
 
     :param block: Block configuration
     :type block: dict(str)
