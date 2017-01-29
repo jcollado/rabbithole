@@ -5,19 +5,19 @@ from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
 with open('README.rst') as readme_file:
-    readme = readme_file.read()
+    README = readme_file.read()
 
 with open('HISTORY.rst') as history_file:
-    history = history_file.read()
+    HISTORY = history_file.read()
 
-requirements = [
+REQUIREMENTS = [
     'PyYAML',
     'blinker',
     'pika',
     'sqlalchemy',
 ]
 
-test_requirements = [
+TEST_REQUIREMENTS = [
     'coveralls',
     'mock',
     'pytest',
@@ -40,7 +40,7 @@ setup(
     name='rabbithole',
     version='0.2.0',
     description="Store messages from an AMQP server into a SQL database",
-    long_description=readme + '\n\n' + history,
+    long_description=README + '\n\n' + HISTORY,
     author="Javier Collado",
     author_email='javier@gigaspaces.com',
     url='https://github.com/jcollado/rabbithole',
@@ -55,7 +55,7 @@ setup(
         ]
     },
     include_package_data=True,
-    install_requires=requirements,
+    install_requires=REQUIREMENTS,
     license="MIT license",
     zip_safe=False,
     keywords='rabbithole',
@@ -70,6 +70,6 @@ setup(
         'Programming Language :: Python :: 3.5',
     ],
     test_suite='tests',
-    tests_require=test_requirements,
+    tests_require=TEST_REQUIREMENTS,
     cmdclass={'test': PyTest},
 )
