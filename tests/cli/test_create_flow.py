@@ -41,7 +41,7 @@ def fixture_kwargs(input_block, output_block):
 
 
 def test_signals_connected(input_block, output_block, kwargs):
-    """Signals are connected as expected."""
+    """Signal objects are connected as expected."""
     input_signal = input_block()
     output_cb = output_block()
 
