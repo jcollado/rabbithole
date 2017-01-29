@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""Project global configuration."""
+
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
@@ -26,12 +28,17 @@ TEST_REQUIREMENTS = [
 
 
 class PyTest(TestCommand):
+
+    """Command to run test cases through pytest."""
+
     def finalize_options(self):
+        """Set custom argumengs fro pytest."""
         TestCommand.finalize_options(self)
         self.test_args = []
         self.test_suite = True
 
     def run_tests(self):
+        """Execute pytest with custom arguments."""
         # import here, cause outside the eggs aren't loaded
         import pytest
         pytest.main(self.test_args)
