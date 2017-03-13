@@ -6,8 +6,7 @@ jobs:
       - image: python:3.6.0
     steps:
       - checkout
-      - run: |
-          apt update
-          apt install -y gcc python-dev
-          pip install tox
-          tox
+      - run: apt update
+      - run: apt install -y gcc python-dev
+      - run: pip install tox
+      - run: tox
