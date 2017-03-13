@@ -10,3 +10,7 @@ jobs:
       - run: apt install -y gcc python-dev
       - run: pip install tox
       - run: tox
+      - save_cache:
+          key: rabbithole-{{ .Branch }}
+          paths:
+            - ~/rabbithole/.tox
