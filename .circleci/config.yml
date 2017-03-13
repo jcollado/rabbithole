@@ -1,0 +1,13 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/rabbithole
+    docker:
+      - image: python:3.6.0
+    steps:
+      - checkout
+      - run: |
+          apt update
+          apt install -y gcc python-dev
+          pip install tox
+          tox
