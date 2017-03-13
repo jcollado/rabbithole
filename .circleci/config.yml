@@ -6,6 +6,8 @@ jobs:
       - image: python:3.6.0
     steps:
       - checkout
+      - restore_cache:
+          key: rabbithole-{{ .Branch }}
       - run: apt update
       - run: apt install -y gcc python-dev
       - run: pip install tox
