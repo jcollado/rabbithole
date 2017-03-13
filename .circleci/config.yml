@@ -7,12 +7,14 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: rabbithole-{{ .Branch }}
+          keys:
+            - rabbithole-{{ .Branch }}-{{ checksum "requirements/common.txt" }}
+            - rabbithole-{{ .Branch }}-
       - run: apt update
       - run: apt install -y gcc python-dev
       - run: pip install tox
       - run: tox
       - save_cache:
-          key: rabbithole-{{ .Branch }}
+          key: rabbithole-{{ .Branch }}-{{ checksum "requirements/common.txt" }}
           paths:
             - ~/rabbithole/.tox
