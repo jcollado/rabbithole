@@ -4,6 +4,7 @@ jobs:
     working_directory: ~/rabbithole
     docker:
       - image: python:3.6.0
+    parallelism: 4
     steps:
       - checkout
       - restore_cache:
@@ -11,7 +12,23 @@ jobs:
       - run: apt update
       - run: apt install -y gcc python-dev
       - run: pip install tox
-      - run: tox
+      - run: |
+          set -e
+          case $CIRCLE_NODE_INDEX in
+          0)
+            tox -e py27
+            tox -e py36
+            ;;
+          1)
+            tox -e flake8
+            ;;
+          2)
+            tox -e mypy2
+            ;;
+          3)
+            tox -e mypy3
+            ;;
+          esac
       - save_cache:
           key: rabbithole-{{ .Branch }}-{{ checksum "requirements/common.txt" }}
           paths:
