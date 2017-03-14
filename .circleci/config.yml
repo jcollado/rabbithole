@@ -8,7 +8,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: rabbithole-{{ .Branch }}-
+          key: rabbithole-{{ .Branch }}-{{ .Environment.CIRCLE_NODE_INDEX }}
       - run: apt update
       - run: apt install -y gcc python-dev
       - run: pip install tox
@@ -30,6 +30,6 @@ jobs:
             ;;
           esac
       - save_cache:
-          key: rabbithole-{{ .Branch }}-{{ checksum "requirements/common.txt" }}
+          key: rabbithole-{{ .Branch }}-{{ .Environment.CIRCLE_NODE_INDEX }}-{{ checksum "requirements/common.txt" }}
           paths:
             - ~/rabbithole/.tox
