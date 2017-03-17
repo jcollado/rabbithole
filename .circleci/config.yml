@@ -14,13 +14,13 @@ jobs:
           case $CIRCLE_NODE_INDEX in
           0)
             tox -e py27
-            tox -e py35
             ;;
           1)
-            tox -e flake8
+            tox -e py35
             ;;
           2)
             tox -e mypy2
+            tox -e flake8
             ;;
           3)
             tox -e mypy3
