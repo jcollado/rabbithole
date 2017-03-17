@@ -1,7 +1,7 @@
 language: python
-python: 3.6
+python: 3.5
 env:
-- TOXENV=py36
+- TOXENV=py35
 - TOXENV=py27
 - TOXENV=flake8
 - TOXENV=mypy2

@@ -3,18 +3,30 @@ jobs:
   build:
     working_directory: ~/rabbithole
     docker:
-      - image: python:3.6.0
+      - image: jcollado/rabbithole-ci:0.1
+    parallelism: 4
     steps:
       - checkout
       - restore_cache:
-          keys:
-            - rabbithole-{{ .Branch }}-{{ checksum "requirements/common.txt" }}
-            - rabbithole-{{ .Branch }}-
-      - run: apt update
-      - run: apt install -y gcc python-dev
-      - run: pip install tox
-      - run: tox
+          key: rabbithole-{{ .Branch }}-{{ .Environment.CIRCLE_NODE_INDEX }}
+      - run: |
+          set -e
+          case $CIRCLE_NODE_INDEX in
+          0)
+            tox -e py27
+            ;;
+          1)
+            tox -e py35
+            ;;
+          2)
+            tox -e mypy2
+            tox -e flake8
+            ;;
+          3)
+            tox -e mypy3
+            ;;
+          esac
       - save_cache:
-          key: rabbithole-{{ .Branch }}-{{ checksum "requirements/common.txt" }}
+          key: rabbithole-{{ .Branch }}-{{ .Environment.CIRCLE_NODE_INDEX }}-{{ checksum "requirements/common.txt" }}-{{ checksum "Dockerfile" }}
           paths:
             - ~/rabbithole/.tox
