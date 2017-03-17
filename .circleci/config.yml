@@ -9,9 +9,6 @@ jobs:
       - checkout
       - restore_cache:
           key: rabbithole-{{ .Branch }}-{{ .Environment.CIRCLE_NODE_INDEX }}
-      - run: apt update
-      - run: apt install -y gcc python-dev
-      - run: pip install tox
       - run: |
           set -e
           case $CIRCLE_NODE_INDEX in
