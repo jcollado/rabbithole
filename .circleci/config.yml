@@ -27,6 +27,6 @@ jobs:
             ;;
           esac
       - save_cache:
-          key: rabbithole-{{ .Branch }}-{{ .Environment.CIRCLE_NODE_INDEX }}-{{ checksum "requirements/common.txt" }}
+          key: rabbithole-{{ .Branch }}-{{ .Environment.CIRCLE_NODE_INDEX }}-{{ checksum "requirements/common.txt" }}-{{ checksum "Dockerfile" }}
           paths:
             - ~/rabbithole/.tox
