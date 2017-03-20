@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/rabbithole
     docker:
-      - image: jcollado/rabbithole-ci:0.1
+      - image: jcollado/python-ci:0.1
     parallelism: 4
     steps:
       - checkout
@@ -27,6 +27,6 @@ jobs:
             ;;
           esac
       - save_cache:
-          key: rabbithole-{{ .Branch }}-{{ .Environment.CIRCLE_NODE_INDEX }}-{{ checksum "requirements/common.txt" }}-{{ checksum "Dockerfile" }}
+          key: rabbithole-{{ .Branch }}-{{ .Environment.CIRCLE_NODE_INDEX }}-{{ checksum "requirements/common.txt" }}
           paths:
             - ~/rabbithole/.tox
