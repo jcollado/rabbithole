@@ -1,4 +1,4 @@
-class ConnectionParameters(object):
+class URLParameters(object):
     def __init__(self, server):
         pass
 

@@ -26,16 +26,16 @@ class Consumer(object):
 
     """AMQP message consumer.
 
-    :param server: AMQP server IP address
+    :param url: AMQP server connection string
     :type server: str
 
     """
 
-    def __init__(self, server):
+    def __init__(self, url):
         # type: (str) -> None
         """Configure queue."""
-        LOGGER.info('Connecting to %r...', server)
-        parameters = pika.ConnectionParameters(server)
+        LOGGER.info('Connecting to %r...', url)
+        parameters = pika.URLParameters(url)
         connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
 
