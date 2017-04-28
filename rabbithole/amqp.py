@@ -103,17 +103,14 @@ class Consumer(object):
         # Only accept json messages
         if header_frame.content_type != 'application/json':
             LOGGER.warning(
-                'Message discarded. Unexpected content type: %r',
-                header_frame.content_type,
-            )
-            channel.basic_nack(method_frame.delivery_tag, requeue=False)
-            return
+                'Unexpected content type: %r', header_frame.content_type)
 
-        channel.basic_ack(delivery_tag=method_frame.delivery_tag)
         try:
             payload = json.loads(body)
         except ValueError:
             LOGGER.warning('Body decoding error: %r', body)
+            channel.basic_nack(method_frame.delivery_tag, requeue=False)
         else:
+            channel.basic_ack(delivery_tag=method_frame.delivery_tag)
             signal = self.signals[exchange_name]
             signal.send(self, payload=payload)
