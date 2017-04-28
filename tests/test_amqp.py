@@ -44,10 +44,7 @@ def test_exchanges_declared(channel):
     consumer = Consumer('<server>')
     signal = consumer(exchange)
 
-    channel.exchange_declare.assert_called_with(
-        exchange=exchange,
-        exchange_type='fanout',
-    )
+    channel.exchange_declare.assert_called_with(exchange=exchange)
     assert isinstance(signal, blinker.Signal)
 
 

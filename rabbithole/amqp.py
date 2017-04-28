@@ -50,32 +50,29 @@ class Consumer(object):
         self.queue_name = queue_name
         self.signals = {}  # type: Dict[str, blinker.Signal]
 
-    def __call__(self, exchange_name):
-        # type: (str) -> blinker.Signal
+    def __call__(self, exchange, **kwargs):
+        # type: (str, **str) -> blinker.Signal
         """Create signal to send when a message from a exchange is received.
 
-        :param exchange_name: Exchange name to bind to the queue
-        :type exchange_name: str
+        :param exchange: Exchange name to bind to the queue
+        :type exchange: str
+        :param kwargs:
+            Additional parameters to pika.channel.Channel.exchange_declare
+        :type kwargs: dict(str)
         :returns: The signal that will be send, so that it can be connected
         :rtype: :class:`blinker.Signal`
 
         """
-        if exchange_name in self.signals:
-            return self.signals[exchange_name]
+        if exchange in self.signals:
+            return self.signals[exchange]
 
-        self.channel.exchange_declare(
-            exchange=exchange_name,
-            exchange_type='fanout',
-        )
-        self.channel.queue_bind(
-            exchange=exchange_name,
-            queue=self.queue_name,
-        )
+        self.channel.exchange_declare(exchange=exchange, **kwargs)
+        self.channel.queue_bind(exchange=exchange, queue=self.queue_name)
         LOGGER.debug(
-            'Queue %r bound to exchange %r', self.queue_name, exchange_name)
+            'Queue %r bound to exchange %r', self.queue_name, exchange)
 
         signal = blinker.Signal()
-        self.signals[exchange_name] = signal
+        self.signals[exchange] = signal
         return signal
 
     def run(self):
