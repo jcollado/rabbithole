@@ -79,6 +79,13 @@ def create_block_instance(block):
     :rtype: instance
 
     """
+    LOGGER.info('Creating %r block instance...', block['type'])
+    LOGGER.debug(
+        '%r block instance arguments: (args: %s, kwargs: %s)',
+        block['type'],
+        block.get('args'),
+        block.get('kwargs'),
+    )
     block_class = BLOCK_CLASSES[block['type']]
 
     try:
@@ -116,6 +123,13 @@ def create_flow(flow, namespace, batcher_config):
     input_block_instance = namespace[input_block['name']]
 
     try:
+        LOGGER.info('Getting %r input block signal...', input_block['name'])
+        LOGGER.debug(
+            '%r input block signal arguments: (args: %s, kwargs: %s)',
+            input_block['name'],
+            input_block.get('args'),
+            input_block.get('kwargs'),
+        )
         input_signal = input_block_instance(
             *input_block.get('args', []),
             **input_block.get('kwargs', {})
