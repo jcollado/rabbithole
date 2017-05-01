@@ -7,6 +7,7 @@ import yaml
 
 from mock import patch
 from six import StringIO
+from six.moves import builtins
 
 from rabbithole.cli import parse_arguments
 
@@ -23,7 +24,7 @@ def test_config_file_invalid():
     with pytest.raises(SystemExit), \
             patch('rabbithole.cli.sys.stderr'), \
             patch('rabbithole.cli.os') as os_, \
-            patch('rabbithole.cli.open') as open_:
+            patch('{}.open'.format(builtins.__name__)) as open_:
         os_.path.isfile.return_value = True
         open_().__enter__.return_value = StringIO('>invalid yaml<')
         parse_arguments(['some file'])
@@ -33,7 +34,7 @@ def test_config_file_load_success():
     """Config file successfully loaded."""
     expected_value = {'a': 'value'}
     with patch('rabbithole.cli.os') as os_, \
-            patch('rabbithole.cli.open') as open_:
+            patch('{}.open'.format(builtins.__name__)) as open_:
         os_.path.isfile.return_value = True
         open_().__enter__.return_value = (
             StringIO(yaml.dump(expected_value)))
