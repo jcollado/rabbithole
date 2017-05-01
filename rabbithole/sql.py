@@ -55,7 +55,7 @@ class Database(object):
             query,  # type: object
             parameters,  # type: Optional[List]
             batch,  # type: List[Dict[str, object]]
-                ):
+            ):
         """Execute insert query for the batch that is ready.
 
         :param sender: The batcher who sent the batch_ready signal
@@ -88,13 +88,20 @@ class Database(object):
         else:
             LOGGER.debug('Inserted %d rows', len(batch))
 
-    def _get_batch_parameters(self, parameters, batch):
+    def _get_batch_parameters(
+            self,
+            parameters,  # type: List[str]
+            batch,  # type: List[Dict[str, object]]
+            ):
+        # type: (...) -> List[List[Optional[object]]]
         """Get query parameters for a batch of messages.
 
         :param parameters: Mapping from message to query parameters.
         :type parameters: list(str)
         :param batch: Batch of messages
         :type batch: list(dict(str))
+        :returns: All parameters extracted from all messages
+        :rtype: list(list(object | None))
 
         """
         batch_parameters = [
@@ -104,12 +111,15 @@ class Database(object):
         return batch_parameters
 
     def _get_message_parameters(self, parameters, message):
+        # type: (List[str], Dict[str, object]) -> List[Optional[object]]
         """Get query parameters for a message.
 
         :param parameters: Mapping from message to query parameters.
         :type parameters: list(str)
         :param message: A message
         :type message: dict(str)
+        :returns: All parameters extracted from message
+        :rtype: list(object | None)
 
         """
         message_parameters = [
@@ -119,18 +129,22 @@ class Database(object):
         return message_parameters
 
     def _get_message_parameter(self, parameter, message):
+        # type: (str, Dict[str, object]) -> Optional[object]
         """Get query parameter for a message.
 
         :param parameters: Mapping from message to query parameter.
         :type parameters: str
         :param message: A message
         :type message: dict(str)
+        :returns: The parameter extracted from the message
+        :rtype: object | None
 
         """
         keys = parameter.split('.')
         value = message
         for key in keys:
-            value = value.get(key)
-            if value is None:
-                break
+            if isinstance(value, dict):
+                value = value.get(key)
+            else:
+                return None
         return value
