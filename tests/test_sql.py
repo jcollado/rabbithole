@@ -49,7 +49,13 @@ def test_query_executed(database):
 def test_batch_parameters(database):
     """Batch parameters mapped as expected."""
     query = 'query'
-    parameters = ['message', 'nested.message']
+    parameters = [
+        'message',
+        'nested.message',
+        'unknown',
+        'nested.unknown',
+        'message.unknown',
+    ]
     batch = [
         {
             'message': '<message>',
@@ -63,7 +69,15 @@ def test_batch_parameters(database):
     database.batch_ready_cb('<sender>', query, parameters, batch)
     database.connection.execute.assert_called_once_with(
         query,
-        [['<message>', '<nested_message>']],
+        [
+            [
+                '<message>',
+                '<nested_message>',
+                None,
+                None,
+                None,
+            ],
+        ],
     )
 
 
