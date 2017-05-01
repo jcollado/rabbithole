@@ -69,14 +69,15 @@ def test_empty_batch(batcher):
     """Warning written to logs when batch is empty."""
     with patch('rabbithole.batcher.LOGGER') as logger:
         batcher.queue_batch()
-        logger.warning.assert_called_with('Nothing to queue')
+        logger.warning.assert_called_with('[%x] Nothing to queue', id(batcher))
 
 
 def test_expired_timer_not_active(batcher):
     """Warning written to logs when expired timer is not active."""
     with patch('rabbithole.batcher.LOGGER') as logger:
         batcher.time_expired_cb()
-        logger.warning.assert_called_with('Timer is not active')
+        logger.warning.assert_called_with(
+            '[%x] Timer is not active', id(batcher))
 
 
 def test_timer_already_active(batcher):
@@ -84,11 +85,13 @@ def test_timer_already_active(batcher):
     batcher.timer = Mock()
     with patch('rabbithole.batcher.LOGGER') as logger:
         batcher.start_timer()
-        logger.warning.assert_called_with('Timer already active')
+        logger.warning.assert_called_with(
+            '[%x] Timer already active', id(batcher))
 
 
 def test_cancelled_timer_not_active(batcher):
     """Warning written to logs when cancelled timer is not active."""
     with patch('rabbithole.batcher.LOGGER') as logger:
         batcher.cancel_timer()
-        logger.warning.assert_called_with('Timer is not active')
+        logger.warning.assert_called_with(
+            '[%x] Timer is not active', id(batcher))

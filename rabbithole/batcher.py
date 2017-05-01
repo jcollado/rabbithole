@@ -68,7 +68,8 @@ class Batcher(object):
         with self.lock:
             self.batch.append(payload)
             LOGGER.debug(
-                'Message added to batch (size: %d, capacity: %d)',
+                '[%x] Message added to batch (size: %d, capacity: %d)',
+                id(self),
                 len(self.batch),
                 self.size_limit,
             )
@@ -76,7 +77,11 @@ class Batcher(object):
             if len(self.batch) == 1:
                 self.start_timer()
             elif len(self.batch) >= self.size_limit:
-                LOGGER.debug('Size limit (%d) exceeded', self.size_limit)
+                LOGGER.debug(
+                    '[%x] Size limit (%d) exceeded',
+                    id(self),
+                    self.size_limit,
+                )
                 self.queue_batch()
                 self.cancel_timer()
 
@@ -90,19 +95,18 @@ class Batcher(object):
         """
         # Use a lock to make sure that callback execution doesn't interleave
         with self.lock:
-            LOGGER.debug('Time limit (%.2f) exceeded', self.time_limit)
+            LOGGER.debug(
+                '[%x] Time limit (%.2f) exceeded',
+                id(self),
+                self.time_limit,
+            )
             if self.timer is None:
-                LOGGER.warning('Timer is not active')
+                LOGGER.warning('[%x] Timer is not active', id(self))
                 return
             self.queue_batch()
             self.timer = None
 
-        thread = threading.current_thread()
-        LOGGER.debug(
-            'Timer thread finished: (%d, %s)',
-            thread.ident,
-            thread.name,
-        )
+        LOGGER.debug('[%x] Timer thread finished', id(self))
 
     def queue_batch(self):
         # type: () -> None
@@ -116,7 +120,7 @@ class Batcher(object):
 
         """
         if not self.batch:
-            LOGGER.warning('Nothing to queue')
+            LOGGER.warning('[%x] Nothing to queue', id(self))
             return
         self.batch_ready.send(self, batch=self.batch)
         self.batch = []
@@ -130,16 +134,15 @@ class Batcher(object):
 
         """
         if self.timer:
-            LOGGER.warning('Timer already active')
+            LOGGER.warning('[%x] Timer already active', id(self))
             return
         timer = threading.Timer(self.time_limit, self.time_expired_cb)
         timer.daemon = True
         timer.start()
         LOGGER.debug(
-            'Timer thread started (%.2f): (%d, %s)',
+            '[%x] Timer thread started (%.2f)',
+            id(self),
             self.time_limit,
-            timer.ident,
-            timer.name,
         )
         self.timer = timer
 
@@ -155,12 +158,8 @@ class Batcher(object):
 
         """
         if self.timer is None:
-            LOGGER.warning('Timer is not active')
+            LOGGER.warning('[%x] Timer is not active', id(self))
             return
         self.timer.cancel()
-        LOGGER.debug(
-            'Timer thread cancelled: (%d, %s)',
-            self.timer.ident,
-            self.timer.name,
-        )
+        LOGGER.debug('[%x] Timer thread cancelled', id(self))
         self.timer = None
