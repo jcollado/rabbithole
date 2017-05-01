@@ -26,13 +26,17 @@ def test_is_connected(database):
 
 def test_partial_callback(database):
     """Callback returned with query parameter set when instance called."""
-    query = '<query>'
+    raw_query = '<raw_query>'
+    text_query = '<text_query>'
     batch = [1, 2, 3]
 
-    callback = database(query)
+    with patch('rabbithole.sql.text') as text:
+        text.return_value = text_query
+        callback = database(raw_query)
+
     database.connection = Mock()
     callback('<sender>', batch=batch)
-    database.connection.execute.assert_called_once_with(query, batch)
+    database.connection.execute.assert_called_once_with(text_query, batch)
 
 
 def test_query_executed(database):
@@ -46,19 +50,22 @@ def test_query_executed(database):
     database.connection.execute.assert_called_once_with(query, batch)
 
 
-def test_batch_parameters(database):
-    """Batch parameters mapped as expected."""
+def test_list_parameters(database):
+    """List parameters mapped as expected."""
     query = 'query'
     parameters = [
         'message',
+        'count',
         'nested.message',
         'unknown',
         'nested.unknown',
         'message.unknown',
+        'count.unknown',
     ]
     batch = [
         {
             'message': '<message>',
+            'count': 42,
             'nested': {
                 'message': '<nested_message>',
             },
@@ -72,13 +79,67 @@ def test_batch_parameters(database):
         [
             [
                 '<message>',
+                42,
                 '<nested_message>',
+                None,
                 None,
                 None,
                 None,
             ],
         ],
     )
+
+
+def test_dict_parameters(database):
+    """Dict parameters mapped as expected."""
+    query = 'query'
+    parameters = {
+        'message': 'message',
+        'count': 'count',
+        'nested_message': 'nested.message',
+        'unknown': 'unknown',
+        'nested_unknown': 'nested.unknown',
+        'message_unknown': 'message.unknown',
+        'count_unknown': 'count.unknown',
+    }
+    batch = [
+        {
+            'message': '<message>',
+            'count': 42,
+            'nested': {
+                'message': '<nested_message>',
+            },
+        },
+    ]
+
+    database.connection = Mock()
+    database.batch_ready_cb('<sender>', query, parameters, batch)
+    database.connection.execute.assert_called_once_with(
+        query,
+        [
+            {
+                'message': '<message>',
+                'count': 42,
+                'nested_message': '<nested_message>',
+                'unknown': None,
+                'nested_unknown': None,
+                'message_unknown': None,
+                'count_unknown': None,
+            },
+        ],
+    )
+
+
+def test_invalid_parameters(database):
+    """Exception raised when invalid parameters passed."""
+    query = 'query'
+    parameters = 'invalid'
+    batch = []
+
+    database.connection = Mock()
+
+    with pytest.raises(ValueError):
+        database.batch_ready_cb('<sender>', query, parameters, batch)
 
 
 def test_error_on_database_error(database):

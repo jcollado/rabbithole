@@ -7,7 +7,12 @@ import traceback
 
 from functools import partial
 
-from sqlalchemy import create_engine
+import six
+
+from sqlalchemy import (
+    create_engine,
+    text,
+)
 from sqlalchemy.exc import SQLAlchemyError
 from typing import (  # noqa
     List,
@@ -45,7 +50,7 @@ class Database(object):
         """
         return partial(
             self.batch_ready_cb,
-            query=query,
+            query=text(query),
             parameters=parameters,
         )
 
@@ -68,8 +73,12 @@ class Database(object):
         """
         if parameters is None:
             batch_parameters = batch
+        elif isinstance(parameters, list):
+            batch_parameters = ListParametersMapper(parameters).map(batch)
+        elif isinstance(parameters, dict):
+            batch_parameters = DictParametersMapper(parameters).map(batch)
         else:
-            batch_parameters = self._get_batch_parameters(parameters, batch)
+            raise ValueError('Unexpected parameter mapping: %s', parameters)
 
         try:
             LOGGER.info(
@@ -88,12 +97,85 @@ class Database(object):
         else:
             LOGGER.debug('Inserted %d rows', len(batch))
 
-    def _get_batch_parameters(
-            self,
-            parameters,  # type: List[str]
-            batch,  # type: List[Dict[str, object]]
-            ):
-        # type: (...) -> List[List[Optional[object]]]
+
+class ListParametersMapper(object):
+
+    """Map messages to lists of parameters.
+
+    :param parameters: Mapping from message to query parameters.
+    :type parameters: list(str)
+
+    """
+
+    def __init__(self, parameters):
+        # type: (List[str]) -> None
+        """Initialize parameters."""
+        self.parameters = parameters
+
+    def map(self, batch):
+        # type: (List[Dict[str, object]]) -> List[List[Optional[object]]]
+        """Get query parameters for a batch of messages.
+
+        :param batch: Batch of messages
+        :type batch: list(dict(str))
+        :returns: All parameters extracted from all messages
+        :rtype: list(list(object | None))
+
+        """
+        batch_parameters = [
+            self._map_message_parameters(message)
+            for message in batch
+        ]
+        return batch_parameters
+
+    def _map_message_parameters(self, message):
+        # type: (Dict[str, object]) -> List[Optional[object]]
+        """Get query parameters for a message.
+
+        :param message: A message
+        :type message: dict(str)
+        :returns: All parameters extracted from message
+        :rtype: list(object | None)
+
+        """
+        message_parameters = [
+            self._map_message_parameter(parameter, message)
+            for parameter in self.parameters
+        ]
+        return message_parameters
+
+    def _map_message_parameter(self, parameter, message):
+        # type: (str, Dict[str, object]) -> Optional[object]
+        """Get query parameter for a message.
+
+        :param parameters: Mapping from message to query parameter.
+        :type parameters: str
+        :param message: A message
+        :type message: dict(str)
+        :returns: The parameter extracted from the message
+        :rtype: object | None
+
+        """
+        keys = parameter.split('.')
+        value = message
+        for key in keys:
+            if isinstance(value, dict):
+                value = value.get(key)
+            else:
+                return None
+        return value
+
+
+class DictParametersMapper(object):
+
+    """Map messages to lists of parameters."""
+
+    def __init__(self, parameters):
+        """Initialize paremeters."""
+        self.parameters = parameters
+
+    def map(self, batch):
+        # type: (List[Dict[str, object]]) -> List[Dict[str, Optional[object]]]
         """Get query parameters for a batch of messages.
 
         :param parameters: Mapping from message to query parameters.
@@ -105,13 +187,13 @@ class Database(object):
 
         """
         batch_parameters = [
-            self._get_message_parameters(parameters, message)
+            self._map_message_parameters(message)
             for message in batch
         ]
         return batch_parameters
 
-    def _get_message_parameters(self, parameters, message):
-        # type: (List[str], Dict[str, object]) -> List[Optional[object]]
+    def _map_message_parameters(self, message):
+        # type: (Dict[str, object]) -> Dict[str, Optional[object]]
         """Get query parameters for a message.
 
         :param parameters: Mapping from message to query parameters.
@@ -122,13 +204,13 @@ class Database(object):
         :rtype: list(object | None)
 
         """
-        message_parameters = [
-            self._get_message_parameter(parameter, message)
-            for parameter in parameters
-        ]
+        message_parameters = {
+            key: self._map_message_parameter(parameter, message)
+            for key, parameter in six.iteritems(self.parameters)
+        }
         return message_parameters
 
-    def _get_message_parameter(self, parameter, message):
+    def _map_message_parameter(self, parameter, message):
         # type: (str, Dict[str, object]) -> Optional[object]
         """Get query parameter for a message.
 
