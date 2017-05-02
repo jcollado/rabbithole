@@ -17,6 +17,7 @@ REQUIREMENTS = [
     'blinker',
     'pika',
     'sqlalchemy',
+    'typing;python_version<"3"',
 ]
 
 TEST_REQUIREMENTS = [
@@ -79,4 +80,7 @@ setup(
     test_suite='tests',
     tests_require=TEST_REQUIREMENTS,
     cmdclass={'test': PyTest},
+    extras_require={
+        'postgresql': ['psycopg2'],
+    },
 )
