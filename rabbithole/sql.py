@@ -2,6 +2,7 @@
 
 """Database: run queries with batches of rows per exchange."""
 
+import json
 import logging
 import traceback
 
@@ -163,6 +164,8 @@ class ListParametersMapper(object):
                 value = value.get(key)
             else:
                 return None
+        if isinstance(value, (list, dict)):
+            value = json.dumps(value)
         return value
 
 
@@ -229,4 +232,6 @@ class DictParametersMapper(object):
                 value = value.get(key)
             else:
                 return None
+        if isinstance(value, (list, dict)):
+            value = json.dumps(value)
         return value
