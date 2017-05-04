@@ -46,7 +46,7 @@ class PyTest(TestCommand):
 
 setup(
     name='rabbithole',
-    version='0.2.0',
+    version='0.3.0',
     description="Store messages from an AMQP server into a SQL database",
     long_description=README + '\n\n' + HISTORY,
     author="Javier Collado",
