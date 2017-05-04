@@ -44,10 +44,7 @@ def test_exchanges_declared(channel):
     consumer = Consumer('<server>')
     signal = consumer(exchange)
 
-    channel.exchange_declare.assert_called_with(
-        exchange=exchange,
-        exchange_type='fanout',
-    )
+    channel.exchange_declare.assert_called_with(exchange=exchange)
     assert isinstance(signal, blinker.Signal)
 
 
@@ -88,7 +85,7 @@ def test_run(channel):
 
 @pytest.mark.usefixtures('pika')
 def test_message_content_type():
-    """Message is discarded based on content_type."""
+    """Message discarded when content type is not valid json."""
     exchange = '<exchange>'
     content_type = 'text/plain'
 
@@ -100,15 +97,16 @@ def test_message_content_type():
     header_frame = Mock()
     header_frame.content_type = content_type
     with patch('rabbithole.amqp.LOGGER') as logger:
+        body = '<body>'
         consumer.message_received_cb(
             channel,
             method_frame,
             header_frame,
-            '<body>',
+            body,
         )
-        logger.warning.assert_called_with(
-            'Message discarded. Unexpected content type: %r', content_type)
-
+        logger.warning.assert_any_call(
+            'Unexpected content type: %r', content_type)
+        logger.warning.assert_any_call('Body decoding error: %r', body)
         channel.basic_nack.assert_called_with(
             method_frame.delivery_tag,
             requeue=False,

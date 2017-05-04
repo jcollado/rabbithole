@@ -44,7 +44,7 @@ def main(argv=None):
 
     args = parse_arguments(argv)
     config = args['config']
-    configure_logging(args['log_level'])
+    configure_logging(args['log_level'], args['log_file'])
     logging.debug('Configuration:\n%s', pformat(config))
 
     namespace = {
@@ -79,6 +79,13 @@ def create_block_instance(block):
     :rtype: instance
 
     """
+    LOGGER.info('Creating %r block instance...', block['type'])
+    LOGGER.debug(
+        '%r block instance arguments: (args: %s, kwargs: %s)',
+        block['type'],
+        block.get('args'),
+        block.get('kwargs'),
+    )
     block_class = BLOCK_CLASSES[block['type']]
 
     try:
@@ -116,6 +123,13 @@ def create_flow(flow, namespace, batcher_config):
     input_block_instance = namespace[input_block['name']]
 
     try:
+        LOGGER.info('Getting %r input block signal...', input_block['name'])
+        LOGGER.debug(
+            '%r input block signal arguments: (args: %s, kwargs: %s)',
+            input_block['name'],
+            input_block.get('args'),
+            input_block.get('kwargs'),
+        )
         input_signal = input_block_instance(
             *input_block.get('args', []),
             **input_block.get('kwargs', {})
@@ -218,18 +232,25 @@ def parse_arguments(argv):
         help=('Log level. One of {0} or {1} '
               '(%(default)s by default)'
               .format(', '.join(log_levels[:-1]), log_levels[-1])))
+    parser.add_argument(
+        '-f', '--log-file',
+        dest='log_file',
+        help='Path to log file',
+    )
 
     args = vars(parser.parse_args(argv))
     args['log_level'] = getattr(logging, args['log_level'].upper())
     return args
 
 
-def configure_logging(log_level):
-    # type: (int) -> None
+def configure_logging(log_level, log_file):
+    # type: (int, str) -> None
     """Configure logging based on command line argument.
 
     :param log_level: Log level passed form the command line
     :type log_level: int
+    :param log_file: Path to log file
+    :type log_level: str
 
     """
     root_logger = logging.getLogger()
@@ -237,12 +258,19 @@ def configure_logging(log_level):
 
     # Log to sys.stderr using log level
     # passed through command line
-    log_handler = logging.StreamHandler()
     formatter = logging.Formatter(
         '%(asctime)s %(threadName)s %(levelname)s: %(message)s')
-    log_handler.setFormatter(formatter)
-    log_handler.setLevel(log_level)
-    root_logger.addHandler(log_handler)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    stream_handler.setLevel(log_level)
+    root_logger.addHandler(stream_handler)
+
+    # Log to file if available
+    if log_file is not None:
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(formatter)
+        file_handler.setLevel(log_level)
+        root_logger.addHandler(file_handler)
 
     # Disable pika extra verbose logging
     logging.getLogger('pika').setLevel(logging.WARNING)

@@ -14,6 +14,8 @@ routing key isn't relevant in this case.
 import json
 import logging
 
+from pprint import pformat
+
 import blinker
 import pika
 
@@ -26,16 +28,16 @@ class Consumer(object):
 
     """AMQP message consumer.
 
-    :param server: AMQP server IP address
+    :param url: AMQP server connection string
     :type server: str
 
     """
 
-    def __init__(self, server):
+    def __init__(self, url):
         # type: (str) -> None
         """Configure queue."""
-        LOGGER.info('Connecting to %r...', server)
-        parameters = pika.ConnectionParameters(server)
+        LOGGER.info('Connecting to %r...', url)
+        parameters = pika.URLParameters(url)
         connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
 
@@ -50,32 +52,29 @@ class Consumer(object):
         self.queue_name = queue_name
         self.signals = {}  # type: Dict[str, blinker.Signal]
 
-    def __call__(self, exchange_name):
-        # type: (str) -> blinker.Signal
+    def __call__(self, exchange, **kwargs):
+        # type: (str, **str) -> blinker.Signal
         """Create signal to send when a message from a exchange is received.
 
-        :param exchange_name: Exchange name to bind to the queue
-        :type exchange_name: str
+        :param exchange: Exchange name to bind to the queue
+        :type exchange: str
+        :param kwargs:
+            Additional parameters to pika.channel.Channel.exchange_declare
+        :type kwargs: dict(str)
         :returns: The signal that will be send, so that it can be connected
         :rtype: :class:`blinker.Signal`
 
         """
-        if exchange_name in self.signals:
-            return self.signals[exchange_name]
+        if exchange in self.signals:
+            return self.signals[exchange]
 
-        self.channel.exchange_declare(
-            exchange=exchange_name,
-            exchange_type='fanout',
-        )
-        self.channel.queue_bind(
-            exchange=exchange_name,
-            queue=self.queue_name,
-        )
+        self.channel.exchange_declare(exchange=exchange, **kwargs)
+        self.channel.queue_bind(exchange=exchange, queue=self.queue_name)
         LOGGER.debug(
-            'Queue %r bound to exchange %r', self.queue_name, exchange_name)
+            'Queue %r bound to exchange %r', self.queue_name, exchange)
 
         signal = blinker.Signal()
-        self.signals[exchange_name] = signal
+        self.signals[exchange] = signal
         return signal
 
     def run(self):
@@ -98,22 +97,22 @@ class Consumer(object):
 
         """
         exchange_name = method_frame.exchange
-        LOGGER.debug('Message received from %r: %s', exchange_name, body)
 
-        # Only accept json messages
         if header_frame.content_type != 'application/json':
             LOGGER.warning(
-                'Message discarded. Unexpected content type: %r',
-                header_frame.content_type,
-            )
-            channel.basic_nack(method_frame.delivery_tag, requeue=False)
-            return
+                'Unexpected content type: %r', header_frame.content_type)
 
-        channel.basic_ack(delivery_tag=method_frame.delivery_tag)
         try:
             payload = json.loads(body)
         except ValueError:
             LOGGER.warning('Body decoding error: %r', body)
+            channel.basic_nack(method_frame.delivery_tag, requeue=False)
         else:
+            LOGGER.debug(
+                'Message received from %r:\n%s',
+                exchange_name,
+                pformat(payload),
+            )
+            channel.basic_ack(delivery_tag=method_frame.delivery_tag)
             signal = self.signals[exchange_name]
             signal.send(self, payload=payload)
