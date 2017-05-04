@@ -97,13 +97,7 @@ class Consumer(object):
 
         """
         exchange_name = method_frame.exchange
-        LOGGER.debug(
-            'Message received from %r:\n%s',
-            exchange_name,
-            pformat(body),
-        )
 
-        # Only accept json messages
         if header_frame.content_type != 'application/json':
             LOGGER.warning(
                 'Unexpected content type: %r', header_frame.content_type)
@@ -114,6 +108,11 @@ class Consumer(object):
             LOGGER.warning('Body decoding error: %r', body)
             channel.basic_nack(method_frame.delivery_tag, requeue=False)
         else:
+            LOGGER.debug(
+                'Message received from %r:\n%s',
+                exchange_name,
+                pformat(payload),
+            )
             channel.basic_ack(delivery_tag=method_frame.delivery_tag)
             signal = self.signals[exchange_name]
             signal.send(self, payload=payload)
