@@ -20,31 +20,41 @@ where *config.yml* is a YAML configuration file. For example:
     size_limit: 5
     time_limit: 15
     blocks:
-    - name: input
-        type: amqp
-        kwargs:
-            server: '172.20.0.2'
-    - name: output
-        type: sql
-        kwargs:
-            url: 'postgres://postgres@172.20.0.3/database'
+      - name: input
+          type: amqp
+          kwargs:
+            url: 'ampq://username:password@localhost:5672'
+      - name: output
+          type: sql
+          kwargs:
+            url: 'postgres://username:password@localhost:5432/db_name'
     flows:
-    - - name: input
-        kwargs:
-            exchange_name: logs
+      - - name: input
+          kwargs:
+            exchange: logs
+            exchange_type: fanout
+            durable: true
         - name: output
-        kwargs:
+          kwargs:
             query:
-            INSERT INTO logs (message, message_vector)
-            VALUES (:message, to_tsvector('english', :message))
-    - - name: input
-        kwargs:
-            exchange_name: events
+              INSERT INTO logs (timestamp, message)
+              VALUES (CAST (:timestamp AS TIMESTAMP), :message)
+            parameters:
+              timestamp: timestamp
+              message: message.text
+      - - name: input
+          kwargs:
+            exchange: events
+            exchange_type: fanout
+            durable: true
         - name: output
-        kwargs:
+          kwargs:
             query:
-            INSERT INTO events (message, message_vector)
-            VALUES (:message, to_tsvector('english', :message))
+              INSERT INTO events (timestamp, message)
+              VALUES (CAST (:timestamp AS TIMESTAMP), :message)
+            parameters:
+              timestamp: timestamp
+              message: message.text
 
 where:
     - *size_limit*: batcher size limit
@@ -103,20 +113,24 @@ ampq is an input flow that can receive data from amqp servers.
 .. code-block:: yaml
 
     blocks:
-    - name: input
-        type: amqp
-        kwargs:
-            server: '172.20.0.2'
+      - name: input
+          type: amqp
+          kwargs:
+            url: 'ampq://username:password@localhost:5672'
+
     flows:
-    - - name: input
-        kwargs:
-            exchange_name: logs
+      - - name: input
+          kwargs:
+            exchange: logs
+            exchange_type: fanout
+            durable: true
 
 where:
-
-    *server*: is the IP address of the amq server to connect to
-    *exchange_name* is the name of the exchange for which messages will be
-    transferred in a given flow
+    - *url*: is the `AMQP connection string`_.
+    - *exchange* is the name of the exchange for which messages will be
+      transferred in a given flow.
+    - additonal parameters are optional and passed directly to
+      `pika.channel.Channel.exchange_declare`_.
 
 
 sql
@@ -127,28 +141,30 @@ sql is an output flow that can write data to SQL databases.
 .. code-block:: yaml
 
     blocks:
-    - name: output
-        type: sql
-        kwargs:
-            url: 'postgres://postgres@172.20.0.3/database'
+      - name: output
+          type: sql
+          kwargs:
+            url: 'postgres://username:password@localhost:5432/db_name'
     flows:
-    - - name: output
-        kwargs:
+      - - name: output
+          kwargs:
             query:
-            INSERT INTO logs (message, message_vector)
-            VALUES (:message, to_tsvector('english', :message))
+              INSERT INTO logs (timestamp, message)
+              VALUES (CAST (:timestamp AS TIMESTAMP), :message)
+            parameters:
+              timestamp: timestamp
+              message: message.text
 
 where:
-
-    *url* is the `connection string`_ to the database.
-    *query* is the `query`_ to execute when a message is received in a given
-    flow.
-
-Note that the underlying implementation uses sqlalchemy_, so please refer to
-its documentation for more information about their format.
-
+    - *url* is the `database connection string`_.
+    - *query* is the `query`_ to execute when a message is received in a given
+      flow.
+    - *parameters* is an optional mapping from the message received to the
+      object pased to the query (useful when the message contains nested data
+      since nesting is not supported in query parameters).
 
 .. _logstash: https://www.elastic.co/products/logstash
-.. _connection string: http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
+.. _AMQP connection string: http://pika.readthedocs.io/en/latest/examples/using_urlparameters.html#using-urlparameters
+.. _pika.channel.Channel.exchange_declare: http://pika.readthedocs.io/en/latest/modules/channel.html#pika.channel.Channel.exchange_declare
+.. _database connection string: http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
 .. _query: http://docs.sqlalchemy.org/en/latest/core/sqlelement.html?highlight=text#sqlalchemy.sql.expression.text
-.. _sqlalchemy: http://www.sqlalchemy.org/
