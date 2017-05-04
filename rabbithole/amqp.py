@@ -14,6 +14,8 @@ routing key isn't relevant in this case.
 import json
 import logging
 
+from pprint import pformat
+
 import blinker
 import pika
 
@@ -95,7 +97,11 @@ class Consumer(object):
 
         """
         exchange_name = method_frame.exchange
-        LOGGER.debug('Message received from %r: %s', exchange_name, body)
+        LOGGER.debug(
+            'Message received from %r:\n%s',
+            exchange_name,
+            pformat(body),
+        )
 
         # Only accept json messages
         if header_frame.content_type != 'application/json':
