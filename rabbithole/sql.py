@@ -138,7 +138,7 @@ class ParametersMapper(object):
 
     @abstractmethod
     def _map_message_parameters(self, message):
-        pass
+        """Get query parameters for a message."""
 
     def _map_message_parameter(self, parameter, message):
         # type: (str, Dict[str, object]) -> Optional[object]

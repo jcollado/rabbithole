@@ -56,6 +56,7 @@ def test_list_parameters(database):
     parameters = [
         'message',
         'count',
+        'nested',
         'nested.message',
         'unknown',
         'nested.unknown',
@@ -80,6 +81,7 @@ def test_list_parameters(database):
             [
                 '<message>',
                 42,
+                '{"message": "<nested_message>"}',
                 '<nested_message>',
                 None,
                 None,
@@ -96,6 +98,7 @@ def test_dict_parameters(database):
     parameters = {
         'message': 'message',
         'count': 'count',
+        'nested': 'nested',
         'nested_message': 'nested.message',
         'unknown': 'unknown',
         'nested_unknown': 'nested.unknown',
@@ -120,6 +123,7 @@ def test_dict_parameters(database):
             {
                 'message': '<message>',
                 'count': 42,
+                'nested': '{"message": "<nested_message>"}',
                 'nested_message': '<nested_message>',
                 'unknown': None,
                 'nested_unknown': None,
