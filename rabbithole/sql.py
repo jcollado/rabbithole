@@ -6,6 +6,10 @@ import json
 import logging
 import traceback
 
+from abc import (
+    ABCMeta,
+    abstractmethod,
+)
 from functools import partial
 
 import six
@@ -18,6 +22,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from typing import (  # noqa
     List,
     Optional,
+    Union,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -99,17 +104,19 @@ class Database(object):
             LOGGER.debug('Inserted %d rows', len(batch))
 
 
-class ListParametersMapper(object):
+class ParametersMapper(object):
 
-    """Map messages to lists of parameters.
+    """Base class to map messages to parameters.
 
     :param parameters: Mapping from message to query parameters.
     :type parameters: list(str)
 
     """
 
+    __metaclass__ = ABCMeta
+
     def __init__(self, parameters):
-        # type: (List[str]) -> None
+        # type: (Union[List[str], Dict[str, object]]) -> None
         """Initialize parameters."""
         self.parameters = parameters
 
@@ -129,6 +136,43 @@ class ListParametersMapper(object):
         ]
         return batch_parameters
 
+    @abstractmethod
+    def _map_message_parameters(self, message):
+        pass
+
+    def _map_message_parameter(self, parameter, message):
+        # type: (str, Dict[str, object]) -> Optional[object]
+        """Get query parameter for a message.
+
+        :param parameters: Mapping from message to query parameter.
+        :type parameters: str
+        :param message: A message
+        :type message: dict(str)
+        :returns: The parameter extracted from the message
+        :rtype: object | None
+
+        """
+        keys = parameter.split('.')
+        value = message  # type: Union[Dict[str, object], object]
+        for key in keys:
+            if isinstance(value, dict):
+                value = value.get(key)
+            else:
+                return None
+        if isinstance(value, (list, dict)):
+            value = json.dumps(value)
+        return value
+
+
+class ListParametersMapper(ParametersMapper):
+
+    """Map messages to lists of parameters.
+
+    :param parameters: Mapping from message to query parameters.
+    :type parameters: list(str)
+
+    """
+
     def _map_message_parameters(self, message):
         # type: (Dict[str, object]) -> List[Optional[object]]
         """Get query parameters for a message.
@@ -145,55 +189,10 @@ class ListParametersMapper(object):
         ]
         return message_parameters
 
-    def _map_message_parameter(self, parameter, message):
-        # type: (str, Dict[str, object]) -> Optional[object]
-        """Get query parameter for a message.
 
-        :param parameters: Mapping from message to query parameter.
-        :type parameters: str
-        :param message: A message
-        :type message: dict(str)
-        :returns: The parameter extracted from the message
-        :rtype: object | None
-
-        """
-        keys = parameter.split('.')
-        value = message
-        for key in keys:
-            if isinstance(value, dict):
-                value = value.get(key)
-            else:
-                return None
-        if isinstance(value, (list, dict)):
-            value = json.dumps(value)
-        return value
-
-
-class DictParametersMapper(object):
+class DictParametersMapper(ParametersMapper):
 
     """Map messages to lists of parameters."""
-
-    def __init__(self, parameters):
-        """Initialize paremeters."""
-        self.parameters = parameters
-
-    def map(self, batch):
-        # type: (List[Dict[str, object]]) -> List[Dict[str, Optional[object]]]
-        """Get query parameters for a batch of messages.
-
-        :param parameters: Mapping from message to query parameters.
-        :type parameters: list(str)
-        :param batch: Batch of messages
-        :type batch: list(dict(str))
-        :returns: All parameters extracted from all messages
-        :rtype: list(list(object | None))
-
-        """
-        batch_parameters = [
-            self._map_message_parameters(message)
-            for message in batch
-        ]
-        return batch_parameters
 
     def _map_message_parameters(self, message):
         # type: (Dict[str, object]) -> Dict[str, Optional[object]]
@@ -212,26 +211,3 @@ class DictParametersMapper(object):
             for key, parameter in six.iteritems(self.parameters)
         }
         return message_parameters
-
-    def _map_message_parameter(self, parameter, message):
-        # type: (str, Dict[str, object]) -> Optional[object]
-        """Get query parameter for a message.
-
-        :param parameters: Mapping from message to query parameter.
-        :type parameters: str
-        :param message: A message
-        :type message: dict(str)
-        :returns: The parameter extracted from the message
-        :rtype: object | None
-
-        """
-        keys = parameter.split('.')
-        value = message
-        for key in keys:
-            if isinstance(value, dict):
-                value = value.get(key)
-            else:
-                return None
-        if isinstance(value, (list, dict)):
-            value = json.dumps(value)
-        return value
