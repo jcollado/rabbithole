@@ -3,7 +3,10 @@
 
 """Project global configuration."""
 
-from setuptools import setup
+from setuptools import (
+    find_packages,
+    setup,
+)
 from setuptools.command.test import test as TestCommand
 
 with open('README.rst') as readme_file:
@@ -52,11 +55,8 @@ setup(
     author="Javier Collado",
     author_email='javier@gigaspaces.com',
     url='https://github.com/jcollado/rabbithole',
-    packages=[
-        'rabbithole',
-    ],
-    package_dir={'rabbithole':
-                 'rabbithole'},
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
     entry_points={
         'console_scripts': [
             'rabbithole=rabbithole.cli:main'
