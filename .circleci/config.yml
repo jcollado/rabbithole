@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/rabbithole
     docker:
-      - image: jcollado/python-ci:0.1
+      - image: jcollado/python-ci:0.2
     parallelism: 4
     steps:
       - checkout
