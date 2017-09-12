@@ -20,6 +20,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import SQLAlchemyError
 from typing import (  # noqa
+    Dict,
     List,
     Optional,
     Union,
@@ -123,7 +124,6 @@ class ParametersMapper(object):
         self.parameters = parameters
 
     def map(self, batch):
-        # type: (List[Dict[str, object]]) -> List[List[Optional[object]]]
         """Get query parameters for a batch of messages.
 
         :param batch: Batch of messages
