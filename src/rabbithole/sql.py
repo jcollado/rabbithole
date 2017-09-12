@@ -73,6 +73,8 @@ class Database(object):
         :type sender: rabbithole.batcher.Batcher
         :param query: The query to execute to insert the batch
         :type query: :class:`sqlalchemy.sql.elements.TextClause`
+        :param parameters: Parameters to pass to the query on execution
+        :type parameters: list | None
         :param batch: Batch of messages
         :type batch: list(dict(str))
 
