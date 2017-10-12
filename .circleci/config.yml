@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/rabbithole
     docker:
-      - image: jcollado/python-ci:0.2
+      - image: jcollado/rabbithole-ci:0.2
     parallelism: 4
     steps:
       - checkout
@@ -16,7 +16,7 @@ jobs:
             tox -e py27
             ;;
           1)
-            tox -e py35
+            tox -e py36
             ;;
           2)
             tox -e mypy2
