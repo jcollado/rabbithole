@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/rabbithole
     docker:
-      - image: jcollado/rabbithole-ci:0.2
+      - image: jcollado/rabbithole-ci:0.3
     parallelism: 4
     steps:
       - checkout
