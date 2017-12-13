@@ -34,8 +34,10 @@ def test_stream_handler_level():
     expected_value = logging.ERROR
     configure_logging(expected_value, None)
     root_logger = logging.getLogger()
-    assert len(root_logger.handlers) == 1
-    handler = root_logger.handlers[0]
+    # pytest its own handler
+    assert len(root_logger.handlers) == 2
+    handler = root_logger.handlers[1]
+    assert isinstance(handler, logging.StreamHandler)
     assert handler.level == expected_value
 
 
@@ -46,8 +48,10 @@ def test_file_handler_level():
     with patch('{}.open'.format(builtins.__name__)):
         configure_logging(expected_value, '<a file>')
     root_logger = logging.getLogger()
-    assert len(root_logger.handlers) == 2
-    handler = root_logger.handlers[1]
+    # pytest its own handler
+    assert len(root_logger.handlers) == 3
+    handler = root_logger.handlers[2]
+    assert isinstance(handler, logging.FileHandler)
     assert handler.level == expected_value
 
 
