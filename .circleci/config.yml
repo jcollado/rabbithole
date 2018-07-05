@@ -4,7 +4,7 @@ jobs:
     working_directory: ~/rabbithole
     docker:
       - image: jcollado/rabbithole-ci:0.3
-    parallelism: 4
+    parallelism: 3
     steps:
       - checkout
       - restore_cache:
@@ -19,11 +19,7 @@ jobs:
             tox -e py36
             ;;
           2)
-            tox -e mypy2
             tox -e flake8
-            ;;
-          3)
-            tox -e mypy3
             ;;
           esac
       - save_cache:
