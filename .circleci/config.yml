@@ -7,8 +7,6 @@ jobs:
     parallelism: 3
     steps:
       - checkout
-      - restore_cache:
-          key: rabbithole-{{ .Branch }}-{{ .Environment.CIRCLE_NODE_INDEX }}
       - run: |
           set -e
           case $CIRCLE_NODE_INDEX in
@@ -22,7 +20,3 @@ jobs:
             tox -e flake8
             ;;
           esac
-      - save_cache:
-          key: rabbithole-{{ .Branch }}-{{ .Environment.CIRCLE_NODE_INDEX }}-{{ checksum "requirements/common.txt" }}
-          paths:
-            - ~/rabbithole/.tox
