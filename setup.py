@@ -47,6 +47,7 @@ class PyTest(TestCommand):
         import pytest
         pytest.main(self.test_args)
 
+
 setup(
     name='rabbithole',
     version='0.3.0',
@@ -75,7 +76,7 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
     test_suite='tests',
     tests_require=TEST_REQUIREMENTS,
